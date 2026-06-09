@@ -1,0 +1,3 @@
+RUN for file in /etc/bash.bashrc /etc/bash.nointeractive.bashrc; do \
+        echo '[ -s "$DDEV_APPROOT/.venv/bin/activate" ] && source "$DDEV_APPROOT/.venv/bin/activate"' >> "$file"; \
+    done

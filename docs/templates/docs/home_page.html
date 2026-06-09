@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags gitmastery i18n scolta %}
+
+{% block title %}GitMastery — {% trans "Multilingual Git Documentation" %}{% endblock %}
+
+{% block content %}
+  <article class="prose hero">
+    <h1>GitMastery</h1>
+    {{ page.intro|richtext }}
+    <p class="hero__hint">
+      {% trans "Try searching:" %}
+      <em>undo my last commit</em>, <em>how to delete a branch</em>, <em>slow git</em>.
+    </p>
+  </article>
+
+  <div class="home-search">{% scolta_search %}</div>
+
+  {% section_nav as nav %}
+  <div class="section-grid">
+    {% for section, pages in nav %}
+      <section class="section-card">
+        <h2>{{ section }}</h2>
+        <p class="section-card__count">{{ pages|length }} {% trans "page(s)" %}</p>
+        <ul>
+          {% for p in pages|slice:":6" %}
+            <li><a href="{% pageurl p %}">{{ p.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endfor %}
+  </div>
+{% endblock %}

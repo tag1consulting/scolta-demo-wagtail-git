@@ -1,0 +1,68 @@
+{% load static wagtailcore_tags i18n gitmastery scolta %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% if page %}{{ page.title }} — {% endif %}GitMastery{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}GitMastery — multilingual Git documentation with Scolta AI search.{% endblock %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'gitmastery/css/gitmastery.css' %}">
+</head>
+<body>
+  <a class="skip-link" href="#main">{% trans "Skip to main content" %}</a>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      {% home_url as brand_url %}
+      <a class="site-brand" href="{{ brand_url|default:'/' }}">
+        <span class="site-brand__mark">⎇</span>
+        <span class="site-brand__name">GitMastery</span>
+      </a>
+
+      <nav class="language-switcher" aria-label="{% trans 'Language' %}">
+        {% language_links as langs %}
+        <ul class="language-switcher__list">
+          {% for l in langs %}
+            <li class="{% if l.active %}is-active{% endif %}">
+              <a href="{{ l.url }}" hreflang="{{ l.code }}"
+                 {% if l.active %}aria-current="true"{% endif %}>{{ l.code|upper }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="{% trans 'Documentation sections' %}">
+      {% section_nav as nav %}
+      {% for section, pages in nav %}
+        <details class="nav-section" {% if forloop.first %}open{% endif %}>
+          <summary>{{ section }}</summary>
+          <ul>
+            {% for p in pages %}
+              <li {% if page and p.pk == page.pk %}class="is-active"{% endif %}>
+                <a href="{% pageurl p %}">{{ p.title }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </details>
+      {% endfor %}
+    </aside>
+
+    <main id="main" class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>GitMastery is a fictional demo by <a href="https://tag1.com">Tag1 Consulting</a>,
+       showcasing <a href="https://tag1.com/scolta">Scolta</a> AI search on Wagtail.</p>
+  </footer>
+
+  <script src="{% static 'gitmastery/js/lang-switcher.js' %}" defer></script>
+</body>
+</html>

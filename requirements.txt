@@ -1,0 +1,12 @@
+# Runtime dependencies for the GitMastery Wagtail demo (used by the Dockerfile).
+#
+# scolta + scolta-django resolve from PyPI, exactly as the Drupal demo resolves
+# tag1/scolta-php + drupal/scolta from Packagist. For local development against
+# the in-repo packages, install them editable instead (see README / pyproject).
+Django>=4.2,<6.0
+wagtail>=6.0
+scolta
+scolta-django
+PyYAML>=6.0
+gunicorn>=21.0
+whitenoise>=6.6

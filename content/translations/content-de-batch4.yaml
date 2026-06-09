@@ -1,0 +1,4603 @@
+# GitMastery deutscher Inhalt - Batch 4
+# Sektionen: Tips (50 Seiten), Comparisons (15 Seiten), Tutorials (20 Seiten)
+
+- source_title: "10 essential Git aliases every developer should have"
+  title: "10 essenzielle Git-Aliase fur jeden Entwickler"
+  langcode: de
+  body: |
+    <h2>Warum Aliase wichtig sind</h2>
+    <p>Git-Aliase verwandeln lange, ausfuhrliche Befehle in kurze, einpragsame Abkurzungen. Sobald Sie eine Handvoll Aliase in Ihrer <code>~/.gitconfig</code> konfiguriert haben, hort der Kampf mit der CLI auf.</p>
+    <h2>Aliase konfigurieren</h2>
+    <pre><code>git config --global alias.st status
+    git config --global alias.co checkout
+    git config --global alias.br branch
+    git config --global alias.ci commit</code></pre>
+    <h2>Zehn Aliase, die sich lohnen</h2>
+    <pre><code>[alias]
+        st = status -sb
+        co = checkout
+        br = branch
+        ci = commit
+        last = log -1 HEAD --stat
+        unstage = reset HEAD --
+        lg = log --oneline --graph --decorate --all
+        amend = commit --amend --no-edit
+        wip = !git add -A && git commit -m 'WIP'
+        undo = reset --soft HEAD~1</code></pre>
+    <h2>Shell-Aliase versus Git-Aliase</h2>
+    <pre><code># In ~/.zshrc oder ~/.bashrc
+    alias g='git'
+    alias gst='git status -sb'
+    alias gp='git pull --rebase'</code></pre>
+    <h2>Aliase, die Shell-Befehle ausfuhren</h2>
+    <pre><code>[alias]
+        cleanup = "!git branch --merged main | grep -v '\\*\\|main\\|master' | xargs -n 1 git branch -d"
+        root = "!pwd"
+        publish = "!git push -u origin $(git symbolic-ref --short HEAD)"</code></pre>
+    <h2>Aliase entdecken und auditieren</h2>
+    <pre><code>git config --get-regexp '^alias\\.'</code></pre>
+
+- source_title: "Branch naming conventions that scale"
+  title: "Branch-Namenskonventionen, die skalieren"
+  langcode: de
+  body: |
+    <h2>Warum Branch-Namen wichtig sind</h2>
+    <p>Branch-Namen sind das erste, was Reviewer, CI-Systeme und zukunftige Archaologen sehen.</p>
+    <h2>Das dreiteilige Muster</h2>
+    <pre><code>git checkout -b feature/PROJ-1234-add-oauth-login
+    git checkout -b bugfix/PROJ-1455-fix-login-redirect
+    git checkout -b chore/PROJ-1502-bump-node-20</code></pre>
+    <h2>Ticket-Identifikatoren einbeziehen</h2>
+    <pre><code>git checkout -b feature/PROJ-1234-search-autocomplete</code></pre>
+    <h2>Regeln, die Schmerz verhindern</h2>
+    <ul>
+      <li>Nur Kleinbuchstaben.</li>
+      <li>Bindestriche, keine Leerzeichen oder Unterstriche.</li>
+      <li>Keine abschliessenden Slashes; keine fuhrenden Slashes.</li>
+      <li>Lange auf etwa 60 Zeichen beschranken.</li>
+      <li>Personliche Namen vermeiden.</li>
+    </ul>
+    <h2>Konventionen durchsetzen</h2>
+    <pre><code>#!/usr/bin/env bash
+    branch=$(git symbolic-ref --short HEAD)
+    if [[ ! "$branch" =~ ^(feature|bugfix|hotfix|chore|docs)/[A-Z]+-[0-9]+-[a-z0-9-]+$ ]]; then
+      echo "Branch name '$branch' does not match convention." >&2
+      exit 1
+    fi</code></pre>
+    <h2>Spezielle Branches</h2>
+    <p>Reservieren Sie spezifische Namen fur lang lebende Branches: <code>main</code>, <code>develop</code>, <code>release/x.y</code>.</p>
+    <h2>Aufraumen</h2>
+    <pre><code>git branch -d feature/PROJ-1234-add-oauth-login
+    git push origin --delete feature/PROJ-1234-add-oauth-login</code></pre>
+
+- source_title: "Commit message best practices (Why, not What)"
+  title: "Best Practices fur Commit-Nachrichten (Warum, nicht Was)"
+  langcode: de
+  body: |
+    <h2>Das Diff sagt schon, was</h2>
+    <p>Eine Commit-Nachricht, die "Updated user controller" sagt, sind verschwendete Bytes.</p>
+    <h2>Das Sieben-Regeln-Format</h2>
+    <ul>
+      <li>Subject vom Body durch Leerzeile trennen.</li>
+      <li>Subject auf 50 Zeichen begrenzen.</li>
+      <li>Subject grossschreiben.</li>
+      <li>Subject nicht mit Punkt beenden.</li>
+      <li>Imperativ verwenden.</li>
+      <li>Body bei 72 Zeichen umbrechen.</li>
+      <li>Body fur "was" und "warum", nicht "wie".</li>
+    </ul>
+    <h2>Ein Beispiel</h2>
+    <pre><code>git commit -m "Reject negative quantities in checkout
+
+    Customers were able to submit negative quantities by editing the
+    DOM, leading to credits being applied to the order total. We add
+    server-side validation in CheckoutValidator because client-side
+    checks alone are insufficient against scripted clients."</code></pre>
+    <h2>Conventional Commits</h2>
+    <pre><code>git commit -m "feat(checkout): reject negative quantities"
+    git commit -m "fix(auth): handle expired refresh tokens"
+    git commit -m "docs(readme): clarify install steps"</code></pre>
+    <h2>Templates machen es automatisch</h2>
+    <pre><code>cat > ~/.gitmessage <<'EOF'
+    # Subject (50 chars max)
+
+    # Why is this change necessary? (wrap at 72 chars)
+
+    # How does it address the problem?
+
+    # Side effects, follow-ups, links?
+    EOF
+    git config --global commit.template ~/.gitmessage</code></pre>
+    <h2>Issues referenzieren</h2>
+    <pre><code>git commit -m "Fix avatar upload race condition
+
+    See: PROJ-2207
+    Co-authored-by: Alex Tan <alex@example.com>"</code></pre>
+
+- source_title: "Writing atomic commits"
+  title: "Atomare Commits schreiben"
+  langcode: de
+  body: |
+    <h2>Was ist ein atomarer Commit?</h2>
+    <p>Ein atomarer Commit erfasst genau eine logische Anderung. Er kompiliert, besteht seine eigenen Tests und kann isoliert reverted werden.</p>
+    <h2>Der Geruchstest</h2>
+    <p>Wenn Sie sich dabei ertappen, eine Commit-Nachricht mit dem Wort "und" zu schreiben — "Add login and fix typo and refactor helper" — sehen Sie drei Commits in einem.</p>
+    <h2>Selektives Staging mit <code>git add -p</code></h2>
+    <pre><code>git add -p src/checkout.js
+    # y - stage this hunk
+    # n - skip this hunk
+    # s - split into smaller hunks
+    # e - manually edit the hunk</code></pre>
+    <h2>Ein Arbeitsbeispiel</h2>
+    <pre><code>git add src/checkout.js
+    git commit -m "Fix off-by-one in cart total calculation"
+
+    git add tests/checkout.test.js
+    git commit -m "Add regression test for cart total bug"
+
+    git add README.md
+    git commit -m "Fix typo in installation section"</code></pre>
+    <h2>Bereits gemachte Commits aufteilen</h2>
+    <pre><code>git rebase -i HEAD~3
+    git reset HEAD^
+    git add -p
+    git commit -m "First atomic piece"
+    git add -p
+    git commit -m "Second atomic piece"
+    git rebase --continue</code></pre>
+    <h2>Versehentliche Uberspaltung kombinieren</h2>
+    <p>Das gegenteilige Problem wird mit Squash gelost.</p>
+    <h2>Tests bei ihrem Code halten</h2>
+    <p>Tests fur ein Feature sollten im selben Commit wie das Feature leben.</p>
+    <h2>Atomare Commits und Bisect</h2>
+    <pre><code>git bisect start
+    git bisect bad HEAD
+    git bisect good v2.4.0</code></pre>
+
+- source_title: "Using git add -p for surgical staging"
+  title: "git add -p fur chirurgisches Staging verwenden"
+  langcode: de
+  body: |
+    <h2>Der Fall fur Patch-Mode-Staging</h2>
+    <p>Das Standard-<code>git add</code> staged ganze Dateien.</p>
+    <h2>Patch-Modus aufrufen</h2>
+    <pre><code>git add -p
+    git add -p src/checkout.js</code></pre>
+    <pre><code>Stage this hunk [y,n,q,a,d,s,e,?]?</code></pre>
+    <h2>Die Prompts, die zahlen</h2>
+    <ul>
+      <li><code>y</code> - diesen Hunk stagen.</li>
+      <li><code>n</code> - diesen Hunk uberspringen.</li>
+      <li><code>s</code> - in kleinere Hunks aufteilen.</li>
+      <li><code>e</code> - Hunk manuell bearbeiten.</li>
+      <li><code>q</code> - beenden.</li>
+      <li><code>a</code> - diesen und alle spateren Hunks stagen.</li>
+      <li><code>d</code> - diesen und alle spateren Hunks uberspringen.</li>
+    </ul>
+    <h2>Manuelle Hunk-Bearbeitung</h2>
+    <p>Drucken von <code>e</code> offnet den Hunk im Editor.</p>
+    <h2>Ein realer Workflow</h2>
+    <pre><code>git diff src/cart.js
+    git add -p src/cart.js
+    git diff --cached src/cart.js
+    git diff src/cart.js
+    git commit -m "Fix cart total off-by-one"</code></pre>
+    <h2>Patch-Modus fur andere Befehle</h2>
+    <pre><code>git reset -p
+    git checkout -p
+    git stash -p
+    git restore -p</code></pre>
+    <h2>GUIs und Patch-Modus</h2>
+    <p>GUI-Tools wie <code>git gui</code>, GitKraken, Fork und das VS Code Source Control Panel bieten Staging auf Zeilenebene.</p>
+
+- source_title: "Amending the last commit safely"
+  title: "Den letzten Commit sicher andern"
+  langcode: de
+  body: |
+    <h2>Was Amend tut</h2>
+    <p><code>git commit --amend</code> ersetzt den letzten Commit durch einen neuen Commit, der enthalt, was Sie aktuell gestaged haben.</p>
+    <h2>Drei haufige Amend-Szenarien</h2>
+    <pre><code># 1. Tippfehler in letzter Nachricht beheben
+    git commit --amend -m "Fix avatar upload race condition"
+
+    # 2. Vergessene Dateien hinzufugen
+    git add forgotten-file.js
+    git commit --amend --no-edit
+
+    # 3. Staged Anderungen vollstandig ersetzen
+    git add -A
+    git commit --amend</code></pre>
+    <h2>Die Sicherheitsregel</h2>
+    <p>Niemals gepushte Commits andern.</p>
+    <pre><code># SAFE
+    git commit --amend
+
+    # DANGEROUS
+    git commit --amend
+    git push --force</code></pre>
+    <h2>Force-with-lease fur Solo-Branches</h2>
+    <pre><code>git commit --amend
+    git push --force-with-lease</code></pre>
+    <h2>Wiederherstellung nach schlechtem Amend</h2>
+    <pre><code>git reflog
+    git reset --hard HEAD@{1}</code></pre>
+    <h2>Amend versus Fixup</h2>
+    <pre><code>git commit --fixup &lt;sha-to-fix&gt;
+    git rebase -i --autosquash &lt;sha-to-fix&gt;^</code></pre>
+    <h2>Autor-Daten</h2>
+    <pre><code>git commit --amend --reset-author --no-edit</code></pre>
+
+- source_title: "Cleaning up local branches"
+  title: "Lokale Branches aufraumen"
+  langcode: de
+  body: |
+    <h2>Branch-Wildwuchs ist real</h2>
+    <p>Nach sechs Monaten kann <code>git branch</code> Dutzende toter Branches auflisten.</p>
+    <h2>Gemergten Branches auflisten</h2>
+    <pre><code>git checkout main
+    git pull
+    git branch --merged
+    git branch --no-merged</code></pre>
+    <h2>Bulk-Loschen gemergter Branches</h2>
+    <pre><code>git branch --merged main | grep -v -E '^\\*|^\\s*(main|master|develop)$' | xargs -n 1 git branch -d</code></pre>
+    <h2>Veraltete Remote-Tracking-Branches prunen</h2>
+    <pre><code>git fetch --prune
+    git config --global fetch.prune true</code></pre>
+    <h2>Branches ohne Upstream finden</h2>
+    <pre><code>git branch -vv | grep -v origin/
+    git for-each-ref --format='%(refname:short) %(upstream)' refs/heads</code></pre>
+    <h2>Branches mit verschwundenem Remote erkennen</h2>
+    <pre><code>git fetch --prune
+    git branch -vv | awk '/: gone]/{print $1}'</code></pre>
+    <h2>Ein Cleanup-Alias</h2>
+    <pre><code>git config --global alias.cleanup '!git fetch --prune && git branch --merged main | grep -v -E "^\\*|^\\s*(main|master|develop)$" | xargs -n 1 git branch -d'</code></pre>
+    <h2>Reflog ist Ihr Sicherheitsnetz</h2>
+    <pre><code>git reflog | grep accidentally-deleted
+    git checkout -b accidentally-deleted &lt;sha&gt;</code></pre>
+
+- source_title: "Keeping a clean commit history with rebase"
+  title: "Eine saubere Commit-Historie mit Rebase pflegen"
+  langcode: de
+  body: |
+    <h2>Warum Rebase</h2>
+    <p>Rebase schreibt Ihren Branch um, sodass er an der Spitze eines anderen Branches startet.</p>
+    <h2>Der grundlegende Rebase</h2>
+    <pre><code>git checkout feature/login
+    git fetch origin
+    git rebase origin/main</code></pre>
+    <pre><code>git status
+    git add &lt;file&gt;
+    git rebase --continue</code></pre>
+    <pre><code>git rebase --abort</code></pre>
+    <h2>Interaktiver Rebase</h2>
+    <pre><code>git rebase -i HEAD~5</code></pre>
+    <pre><code>pick 1a2b3c4 Add login form
+    pick 5d6e7f8 Fix typo
+    pick 9a0b1c2 Refactor auth helper</code></pre>
+    <ul>
+      <li><code>reword</code> - Commit behalten, Nachricht andern.</li>
+      <li><code>edit</code> - pausieren zum andern.</li>
+      <li><code>squash</code> - mit vorherigem kombinieren.</li>
+      <li><code>fixup</code> - kombinieren, Nachricht verwerfen.</li>
+      <li><code>drop</code> - Commit entfernen.</li>
+    </ul>
+    <h2>Die Goldene Regel</h2>
+    <p>Niemals Commits rebasen, die gepusht und von anderen konsumiert wurden.</p>
+    <h2>Autosquash-Workflow</h2>
+    <pre><code>git commit --fixup &lt;sha&gt;
+    git commit --fixup &lt;sha&gt;
+    git rebase -i --autosquash main</code></pre>
+    <h2>Rebase versus Merge</h2>
+    <p>Beide integrieren Anderungen.</p>
+    <h2>Rerere fur wiederholte Konflikte</h2>
+    <pre><code>git config --global rerere.enabled true</code></pre>
+
+- source_title: "Pre-PR cleanup: what to do before opening a pull request"
+  title: "Pre-PR-Aufraumen: was zu tun ist, bevor eine Pull Request geoffnet wird"
+  langcode: de
+  body: |
+    <h2>Reviewer lesen Ihre Geschichte</h2>
+    <p>Eine Pull Request ist eine Geschichte uber eine Anderung.</p>
+    <h2>Schritt 1: Rebase auf main</h2>
+    <pre><code>git fetch origin
+    git rebase origin/main</code></pre>
+    <h2>Schritt 2: WIP-Commits squashen</h2>
+    <pre><code>git rebase -i origin/main</code></pre>
+    <h2>Schritt 3: Nachrichten umschreiben</h2>
+    <p><code>reword</code> in interaktivem Rebase verwenden.</p>
+    <h2>Schritt 4: Tests und Linter erneut ausfuhren</h2>
+    <pre><code>npm test
+    npm run lint
+    npm run typecheck</code></pre>
+    <h2>Schritt 5: Selbstuberprufung des Diffs</h2>
+    <pre><code>git diff origin/main...HEAD
+    git log origin/main..HEAD --oneline</code></pre>
+    <h2>Schritt 6: nach Geheimnissen suchen</h2>
+    <pre><code>git diff origin/main...HEAD | grep -iE 'password|secret|api[_-]?key|token'</code></pre>
+    <h2>Schritt 7: Build verifizieren</h2>
+    <p>Push zu einer Draft-PR oder lokal CI ausfuhren.</p>
+    <h2>Schritt 8: PR-Beschreibung schreiben</h2>
+    <p>Was andert sich, warum, wie getestet, Screenshots wenn UI, und Risiken oder Follow-ups.</p>
+    <h2>Schritt 9: Force-Push mit Sorgfalt</h2>
+    <pre><code>git push --force-with-lease origin feature/login</code></pre>
+    <h2>Schritt 10: PR klein halten</h2>
+    <p>Wenn Ihr Diff mehr als 400 Zeilen hat oder mehr als 10 Dateien beruhrt, erwagen Sie das Aufteilen.</p>
+
+- source_title: "Maintaining a linear history"
+  title: "Eine lineare Historie pflegen"
+  langcode: de
+  body: |
+    <h2>Was "linear" bedeutet</h2>
+    <p>Eine lineare Historie hat keine Merge-Commits — jeder Commit hat genau einen Elternteil.</p>
+    <h2>Warum Linearitat wichtig ist</h2>
+    <ul>
+      <li><code>git bisect</code> lauft auf einem Pfad.</li>
+      <li><code>git log --oneline</code> sagt die Wahrheit ohne <code>--graph</code>.</li>
+      <li><code>git revert</code> zielt auf einen einzelnen Commit sauber.</li>
+    </ul>
+    <h2>Linearitat lokal erreichen</h2>
+    <pre><code>git checkout feature/login
+    git fetch origin
+    git rebase origin/main
+    git push --force-with-lease</code></pre>
+    <h2>Auf Remote durchsetzen</h2>
+    <ul>
+      <li><strong>Rebase and merge</strong>.</li>
+      <li><strong>Squash and merge</strong>.</li>
+      <li><strong>Fast-forward only</strong>.</li>
+    </ul>
+    <h2>Lokal durchsetzen</h2>
+    <pre><code>git config --global pull.rebase true
+    git config --global pull.ff only
+    git config --global rebase.autoStash true</code></pre>
+    <h2>Squash vs Rebase Merge</h2>
+    <pre><code># Squash and merge
+    git merge --squash feature/login
+    git commit -m "Add OAuth login"
+
+    # Rebase and merge
+    git rebase main feature/login
+    git checkout main
+    git merge --ff-only feature/login</code></pre>
+    <h2>Nicht-lineare Historie erkennen</h2>
+    <pre><code>git log --merges
+    git log --first-parent --oneline</code></pre>
+
+- source_title: "Using git stash effectively"
+  title: "git stash effektiv nutzen"
+  langcode: de
+  body: |
+    <h2>Wofur Stash da ist</h2>
+    <p><code>git stash</code> legt unversionierte Anderungen weg.</p>
+    <h2>Die Grundlagen</h2>
+    <pre><code>git stash
+    git stash -u
+    git stash -a
+    git stash push -m "WIP login"</code></pre>
+    <pre><code>git stash list
+    git stash show stash@{0}
+    git stash show -p stash@{0}</code></pre>
+    <h2>Wiederherstellung</h2>
+    <pre><code>git stash pop
+    git stash apply stash@{2}
+    git stash drop stash@{0}
+    git stash clear</code></pre>
+    <h2>Partielles Stashen</h2>
+    <pre><code>git stash push -p</code></pre>
+    <h2>Stash auf einen anderen Branch</h2>
+    <pre><code>git stash branch new-branch stash@{0}</code></pre>
+    <h2>Haufige Fallstricke</h2>
+    <ul>
+      <li>Untracked Dateien werden standardmassig nicht gestashed.</li>
+      <li>Stashes uberleben Branches.</li>
+      <li>Stashes sind lokal.</li>
+      <li><code>git stash clear</code> ist unwiderruflich.</li>
+    </ul>
+    <h2>Wenn Commits Stashes schlagen</h2>
+    <pre><code>git add -A && git commit -m "WIP"
+    git reset --soft HEAD^</code></pre>
+    <h2>Verlorene Stashes wiederherstellen</h2>
+    <pre><code>git fsck --no-reflog | awk '/dangling commit/ {print $3}'
+    git stash apply &lt;sha&gt;</code></pre>
+    <h2>Namensdisziplin</h2>
+    <p>Immer <code>-m</code> mit einer Beschreibung ubergeben.</p>
+
+- source_title: "Understanding git reset --soft, --mixed, --hard"
+  title: "git reset --soft, --mixed, --hard verstehen"
+  langcode: de
+  body: |
+    <h2>Die drei Baume</h2>
+    <p>Git verfolgt drei "Baume": den <em>HEAD</em>-Commit, den <em>Index</em> und den <em>Working Tree</em>.</p>
+    <h2><code>--soft</code>: nur HEAD verschieben</h2>
+    <pre><code>git reset --soft HEAD~1
+    git commit -m "Better message"</code></pre>
+    <h2><code>--mixed</code>: auch Index zurucksetzen (Standard)</h2>
+    <pre><code>git reset HEAD~1</code></pre>
+    <h2><code>--hard</code>: alles zurucksetzen</h2>
+    <pre><code>git reset --hard HEAD~1</code></pre>
+    <h2>Eine Entscheidungstabelle</h2>
+    <ul>
+      <li>Letzte Commit-Nachricht erneut machen? <code>--soft HEAD~1</code> dann erneut committen.</li>
+      <li>Alles un-stagen? <code>--mixed</code>.</li>
+      <li>Lokale Anderungen wegwerfen? <code>--hard origin/main</code>.</li>
+    </ul>
+    <h2>Eine einzelne Datei zurucksetzen</h2>
+    <pre><code>git reset HEAD path/to/file
+    git checkout -- path/to/file
+    git restore --staged path/to/file
+    git restore path/to/file</code></pre>
+    <h2>Reset versus Revert</h2>
+    <p><code>reset</code> schreibt die Historie um. <code>revert</code> erstellt einen neuen Commit.</p>
+    <h2>Wiederherstellung nach schlechtem --hard</h2>
+    <pre><code>git reflog
+    git reset --hard HEAD@{1}</code></pre>
+
+- source_title: "The --force-with-lease flag: safer force pushes"
+  title: "Das Flag --force-with-lease: sicherere Force-Pushes"
+  langcode: de
+  body: |
+    <h2>Das Problem mit <code>--force</code></h2>
+    <p>Ein normales <code>git push --force</code> uberschreibt den Remote-Branch.</p>
+    <h2>Was <code>--force-with-lease</code> tut</h2>
+    <pre><code>git push --force-with-lease origin feature/login</code></pre>
+    <h2>Ein Arbeitsbeispiel</h2>
+    <pre><code>git rebase origin/main
+    git push --force
+    git push --force-with-lease</code></pre>
+    <h2>Erwarteten SHA spezifizieren</h2>
+    <pre><code>git push --force-with-lease=feature/login:abc123 origin feature/login</code></pre>
+    <h2>Zum Standard machen</h2>
+    <pre><code>git config --global alias.pf 'push --force-with-lease'
+    git config --global alias.force-push '!echo Use git pf instead'</code></pre>
+    <h2>Die Fetch-Falle</h2>
+    <pre><code>git fetch
+    git log origin/feature/login
+    git push --force-with-lease</code></pre>
+    <h2>Neuere Alternative: <code>--force-if-includes</code></h2>
+    <pre><code>git push --force-with-lease --force-if-includes</code></pre>
+    <h2>Wenn Sie <code>--force</code> verwenden mussen</h2>
+    <p>Geschichte auf einem Branch umschreiben, der Ihnen allein gehort.</p>
+
+- source_title: "Finding the commit that broke something (git bisect)"
+  title: "Den Commit finden, der etwas zerbrach (git bisect)"
+  langcode: de
+  body: |
+    <h2>Binare Suche durch die Historie</h2>
+    <p><code>git bisect</code> fuhrt binare Suche uber Commits durch.</p>
+    <h2>Manuelles Bisect</h2>
+    <pre><code>git bisect start
+    git bisect bad HEAD
+    git bisect good v2.4.0
+    git bisect good
+    git bisect bad
+    git bisect reset</code></pre>
+    <h2>Automatisiertes Bisect</h2>
+    <pre><code>git bisect start HEAD v2.4.0
+    git bisect run ./scripts/reproduce-bug.sh</code></pre>
+    <h2>Untestbare Commits uberspringen</h2>
+    <pre><code>git bisect skip</code></pre>
+    <h2>Bisect mit Begriffen jenseits good/bad</h2>
+    <pre><code>git bisect start --term-old=fast --term-new=slow
+    git bisect slow HEAD
+    git bisect fast v2.4.0</code></pre>
+    <h2>Was Bisect machbar macht</h2>
+    <ul>
+      <li>Atomare Commits.</li>
+      <li>Reproduzierbare Tests.</li>
+      <li>Deterministischer Bug.</li>
+    </ul>
+    <h2>Ein reales Beispiel</h2>
+    <pre><code>git bisect start HEAD v3.0.0
+    git bisect run ./test-memory.sh</code></pre>
+    <h2>Merge-Commits bisecten</h2>
+    <pre><code>git bisect start --first-parent HEAD v2.4.0</code></pre>
+    <h2>Fortschritt visualisieren</h2>
+    <pre><code>git bisect log
+    git bisect visualize</code></pre>
+
+- source_title: "Recovering lost commits with git reflog"
+  title: "Verlorene Commits mit git reflog wiederherstellen"
+  langcode: de
+  body: |
+    <h2>Das Reflog: Ihr Sicherheitsnetz</h2>
+    <p>Git zeichnet jede Bewegung von <code>HEAD</code> im Reflog auf.</p>
+    <h2>Das Reflog inspizieren</h2>
+    <pre><code>git reflog
+    git reflog show feature/login
+    git log -g</code></pre>
+    <h2>Einen geloschten Branch wiederherstellen</h2>
+    <pre><code>git reflog | grep checkout
+    git checkout -b recovered &lt;sha&gt;</code></pre>
+    <h2>Schlechten Reset ruckgangig machen</h2>
+    <pre><code>git reset --hard HEAD~5
+    git reflog
+    git reset --hard HEAD@{1}</code></pre>
+    <h2>Schlechten Rebase ruckgangig machen</h2>
+    <pre><code>git reflog
+    git reset --hard ORIG_HEAD</code></pre>
+    <h2>Geanderten Commit wiederherstellen</h2>
+    <pre><code>git commit --amend
+    git reflog
+    git reset --hard HEAD@{1}</code></pre>
+    <h2>Verwaiste Commits finden</h2>
+    <pre><code>git fsck --lost-found
+    git fsck --no-reflog | grep "dangling commit"</code></pre>
+    <h2>Reflog versus Stash</h2>
+    <pre><code>git fsck --no-reflog | awk '/dangling commit/ {print $3}'
+    git stash apply &lt;sha&gt;</code></pre>
+    <h2>Reflog-Ablauf konfigurieren</h2>
+    <pre><code>git config gc.reflogExpire 180.days
+    git config gc.reflogExpireUnreachable 90.days</code></pre>
+
+- source_title: "Large file handling: Git LFS basics"
+  title: "Grosse Dateien handhaben: Git-LFS-Grundlagen"
+  langcode: de
+  body: |
+    <h2>Warum Git mit grossen Dateien kampft</h2>
+    <p>Git speichert vollstandige Objekt-Snapshots. Wenn Sie ein 100 MB grosses Binary committen, werden die gesamten 100 MB zum Repo hinzugefugt.</p>
+    <h2>Was LFS tut</h2>
+    <p>Git Large File Storage (LFS) ersetzt grosse Dateien im Working Tree mit kleinen Text-Pointer-Dateien.</p>
+    <h2>Installation</h2>
+    <pre><code># macOS / Homebrew
+    brew install git-lfs
+
+    # Debian / Ubuntu
+    sudo apt install git-lfs
+
+    git lfs install</code></pre>
+    <h2>Dateien tracken</h2>
+    <pre><code>git lfs track "*.psd"
+    git lfs track "*.mp4"
+    git lfs track "assets/raw/**"
+    git add .gitattributes
+    git commit -m "Track binaries with LFS"</code></pre>
+    <h2>Tracking verifizieren</h2>
+    <pre><code>git lfs ls-files
+    git lfs status</code></pre>
+    <h2>Bestehende Dateien migrieren</h2>
+    <pre><code>git lfs migrate import --include="*.psd,*.mp4" --everything</code></pre>
+    <h2>Quoten und Preise</h2>
+    <p>GitHub gibt 1 GB Storage und 1 GB monatliche Bandbreite kostenlos.</p>
+    <h2>Mit LFS klonen</h2>
+    <pre><code>git clone https://git.example.com/repo.git
+    git lfs pull
+    GIT_LFS_SKIP_SMUDGE=1 git clone &lt;url&gt;</code></pre>
+    <h2>Haufige Fallstricke</h2>
+    <ul>
+      <li>Vergessen, <code>.gitattributes</code> zu committen.</li>
+      <li>Nach dem Committen tracken.</li>
+      <li>LFS-Objekte leben in <code>.git/lfs</code>.</li>
+    </ul>
+
+- source_title: "Large file handling: alternatives to LFS"
+  title: "Grosse Dateien handhaben: Alternativen zu LFS"
+  langcode: de
+  body: |
+    <h2>LFS ist nicht die einzige Antwort</h2>
+    <p>Git LFS lost ein Problem, fuhrt aber andere ein: zusatzliche Infrastruktur, Hosting-Gebuhren.</p>
+    <h2>Object Storage mit Manifesten</h2>
+    <pre><code># assets.json
+    {
+      "logo.psd": {
+        "sha256": "8a1b...",
+        "url": "s3://my-bucket/assets/8a1b.psd"
+      }
+    }
+
+    aws s3 cp s3://my-bucket/assets/8a1b.psd ./logo.psd</code></pre>
+    <h2>git-annex</h2>
+    <pre><code>git annex init
+    git annex add big-file.psd
+    git commit -m "Add big-file via annex"
+    git annex copy --to=cloud-remote</code></pre>
+    <h2>DVC fur ML-Datasets</h2>
+    <pre><code>dvc init
+    dvc add data/raw
+    git add data/raw.dvc .gitignore
+    git commit -m "Track raw dataset with DVC"
+    dvc push</code></pre>
+    <h2>Submodule, die auf ein Binar-Repo zeigen</h2>
+    <pre><code>git submodule add https://example.com/assets-repo assets
+    git commit -m "Add assets submodule"</code></pre>
+    <h2>Build-Zeit-Generierung</h2>
+    <pre><code>npm run build:assets
+    # .gitignore: dist/</code></pre>
+    <h2>Sparse Checkout fur partielle Klone</h2>
+    <pre><code>git clone --filter=blob:none --sparse &lt;url&gt;
+    cd repo
+    git sparse-checkout set src docs</code></pre>
+    <h2>Auswahl</h2>
+    <ul>
+      <li>Wenige Binaries → Object Storage Manifest.</li>
+      <li>Viele Binaries → git-annex oder LFS.</li>
+      <li>Datasets und ML-Modelle → DVC.</li>
+      <li>Generierter Inhalt → Build-Pipeline.</li>
+    </ul>
+
+- source_title: "Automating releases with git tag and CI/CD"
+  title: "Releases mit git tag und CI/CD automatisieren"
+  langcode: de
+  body: |
+    <h2>Tags als Release-Marker</h2>
+    <p>Ein Git-Tag ist ein unveranderlicher Label auf einem Commit.</p>
+    <h2>Tags erstellen</h2>
+    <pre><code># Annotated
+    git tag -a v1.4.0 -m "Release 1.4.0"
+
+    # Signed
+    git tag -s v1.4.0 -m "Release 1.4.0"
+
+    # Lightweight
+    git tag v1.4.0-alpha</code></pre>
+    <h2>Tags pushen</h2>
+    <pre><code>git push origin v1.4.0
+    git push --tags
+    git push --follow-tags</code></pre>
+    <h2>CI bei Tags ausl&ouml;sen</h2>
+    <pre><code>on:
+      push:
+        tags:
+          - 'v*.*.*'
+
+    jobs:
+      release:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - run: npm ci
+          - run: npm run build
+          - run: npm publish
+            env:
+              NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}</code></pre>
+    <h2>SemVer und Prereleases</h2>
+    <pre><code>if [[ "$TAG" =~ -(alpha|beta|rc) ]]; then
+      npm publish --tag next
+    else
+      npm publish
+    fi</code></pre>
+    <h2>Changelogs aus Tags generieren</h2>
+    <pre><code>git log v1.3.0..v1.4.0 --oneline --no-merges
+    npx conventional-changelog -p angular -i CHANGELOG.md -s</code></pre>
+    <h2>Tags auflisten und inspizieren</h2>
+    <pre><code>git tag
+    git tag -l 'v1.*'
+    git show v1.4.0
+    git tag --contains &lt;sha&gt;
+    git describe --tags HEAD</code></pre>
+    <h2>Tags loschen und verschieben</h2>
+    <pre><code>git tag -d v1.4.0
+    git push origin --delete v1.4.0
+    git tag -a v1.4.0 -m "Release 1.4.0" &lt;new-sha&gt;
+    git push origin v1.4.0</code></pre>
+
+- source_title: "Git in CI/CD: best practices"
+  title: "Git in CI/CD: Best Practices"
+  langcode: de
+  body: |
+    <h2>Der CI-Checkout</h2>
+    <p>CI-Umgebungen checken Ihren Code bei jedem Job frisch aus.</p>
+    <h2>Shallow Clone fur Geschwindigkeit</h2>
+    <pre><code>git clone --depth=1 https://example.com/repo.git
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1</code></pre>
+    <pre><code>git fetch --unshallow</code></pre>
+    <h2>Sparse Checkout fur Monorepos</h2>
+    <pre><code>git sparse-checkout init --cone
+    git sparse-checkout set apps/web shared/ui</code></pre>
+    <h2><code>.git</code> uber Jobs cachen</h2>
+    <pre><code>cache:
+      key: git-$CI_COMMIT_REF_SLUG
+      paths:
+        - .git/</code></pre>
+    <h2>Authentifiziertes Klonen</h2>
+    <pre><code>git clone https://oauth2:${TOKEN}@gitlab.com/group/repo.git</code></pre>
+    <h2>Reproduzierbare Builds</h2>
+    <pre><code>npm ci
+    cargo build --locked</code></pre>
+    <h2>Geanderte Dateien erkennen</h2>
+    <pre><code>BASE=$(git merge-base origin/main HEAD)
+    CHANGED=$(git diff --name-only $BASE)
+    if echo "$CHANGED" | grep -q '^apps/web/'; then
+      ./scripts/test-web.sh
+    fi</code></pre>
+    <h2>Tag-getriebene Workflows</h2>
+    <p>"Build bei jedem Push" von "Publish bei Tag" trennen.</p>
+    <h2>Geheimnisse aus Git heraus</h2>
+    <pre><code>- uses: gitleaks/gitleaks-action@v2</code></pre>
+    <h2>Den Build taggen</h2>
+    <pre><code>SHA=$(git rev-parse --short HEAD)
+    docker build -t myapp:$SHA -t myapp:latest .</code></pre>
+
+- source_title: "Shallow clones in CI for speed"
+  title: "Shallow Clones in CI fur Geschwindigkeit"
+  langcode: de
+  body: |
+    <h2>Die Kosten vollstandiger Klone</h2>
+    <p>Ein vollstandiger Klon eines lang lebenden Repositorys kann hunderte von Megabyte sein. Bei jedem CI-Job.</p>
+    <h2>Shallow-Clone-Grundlagen</h2>
+    <pre><code>git clone --depth=1 https://example.com/repo.git</code></pre>
+    <h2>Shallow mit mehreren Branches</h2>
+    <pre><code>git clone --depth=1 --no-single-branch https://example.com/repo.git</code></pre>
+    <h2>Partielle Klone (Git 2.22+)</h2>
+    <pre><code>git clone --filter=blob:none https://example.com/repo.git
+    git clone --filter=tree:0 https://example.com/repo.git</code></pre>
+    <h2>Shallow und Partial kombinieren</h2>
+    <pre><code>git clone --depth=1 --filter=blob:none https://example.com/repo.git</code></pre>
+    <h2>GitHub Actions Beispiel</h2>
+    <pre><code>- uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Get full history when needed
+      run: git fetch --unshallow</code></pre>
+    <h2>Limitierungen von Shallow</h2>
+    <ul>
+      <li>Sie konnen nicht aus einem Shallow Clone in ein anderes Repo pushen ohne unshallow.</li>
+      <li>Einige Operationen sind unmoglich.</li>
+      <li>Forks und komplexe Submodul-Setups konnen schlecht interagieren.</li>
+    </ul>
+    <h2>Messen</h2>
+    <pre><code>time git clone --depth=1 https://example.com/repo.git
+    time git clone https://example.com/repo.git</code></pre>
+    <h2>Ergebnis cachen</h2>
+    <pre><code>if [ -d .git ]; then
+      git fetch --depth=1
+      git reset --hard FETCH_HEAD
+    else
+      git clone --depth=1 ...
+    fi</code></pre>
+
+- source_title: "Monorepo vs multi-repo: tradeoffs"
+  title: "Monorepo vs Multi-Repo: Kompromisse"
+  langcode: de
+  body: |
+    <h2>Die ewige Debatte</h2>
+    <p>Ein Monorepo halt viele Projekte in einem Repository; Multi-Repo teilt sie auf.</p>
+    <h2>Was Monorepo bietet</h2>
+    <ul>
+      <li><strong>Atomare projektubergreifende Commits</strong>.</li>
+      <li><strong>Einzelne Quelle der Wahrheit</strong>.</li>
+      <li><strong>Leichteres grossangelegtes Refactoring</strong>.</li>
+      <li><strong>Einheitliches Tooling</strong>.</li>
+    </ul>
+    <h2>Was Monorepo kostet</h2>
+    <ul>
+      <li>Repo-Grosse wachst unbegrenzt.</li>
+      <li>Tooling-Investment.</li>
+      <li>Berechtigungs-Granularitat schwieriger.</li>
+      <li>CI muss affected-only Builds machen.</li>
+    </ul>
+    <h2>Was Multi-Repo bietet</h2>
+    <ul>
+      <li>Unabhangige Release-Kadenz.</li>
+      <li>Kleinere, fokussierte Repos.</li>
+      <li>Naturliche Berechtigungsgrenzen.</li>
+      <li>Fehler-Isolation.</li>
+    </ul>
+    <h2>Was Multi-Repo kostet</h2>
+    <ul>
+      <li>Repo-ubergreifende Anderungen erfordern koordinierte PRs.</li>
+      <li>Geteilte Bibliotheken werden zu Versionsproblemen.</li>
+      <li>Tooling driftet.</li>
+      <li>Auffindbarkeit leidet.</li>
+    </ul>
+    <h2>Monorepo-Tooling-Essentials</h2>
+    <pre><code>git sparse-checkout set apps/web shared/ui
+    git clone --filter=blob:none &lt;url&gt;
+    npx nx affected:test --base=main</code></pre>
+    <h2>Multi-Repo-Koordinationstools</h2>
+    <pre><code>gh repo list myorg --limit 200
+    for repo in $(gh repo list myorg --json name -q '.[].name'); do
+      gh pr list -R myorg/$repo
+    done</code></pre>
+    <h2>Hybride Ansatze</h2>
+    <ul>
+      <li>Monorepo fur App-Code, separate Repos fur Infrastruktur.</li>
+      <li>Monorepo pro Business-Domain.</li>
+      <li>Multi-Repo mit einem Meta-Repo aus Submodulen.</li>
+    </ul>
+    <h2>Ehrliche Entscheidungsfaktoren</h2>
+    <ul>
+      <li>Unter 20 Ingenieure: Multi-Repo ist gut.</li>
+      <li>Uber 200 Ingenieure: Monorepo gewinnt.</li>
+    </ul>
+
+- source_title: "Git Flow workflow explained"
+  title: "Git-Flow-Workflow erklart"
+  langcode: de
+  body: |
+    <h2>Was Git Flow ist</h2>
+    <p>Git Flow ist ein 2010 von Vincent Driessen vorgeschlagenes Branching-Modell.</p>
+    <h2>Die funf Branches</h2>
+    <ul>
+      <li><code>main</code> - halt produktionsbereiten Code.</li>
+      <li><code>develop</code> - Integrations-Branch.</li>
+      <li><code>feature/*</code> - off von <code>develop</code>.</li>
+      <li><code>release/*</code> - off von <code>develop</code>, gemerged in <code>main</code>.</li>
+      <li><code>hotfix/*</code> - off von <code>main</code>.</li>
+    </ul>
+    <h2>Ein Feature-Lebenszyklus</h2>
+    <pre><code>git checkout develop
+    git pull
+    git checkout -b feature/oauth-login
+    git checkout develop
+    git merge --no-ff feature/oauth-login
+    git push origin develop
+    git branch -d feature/oauth-login</code></pre>
+    <h2>Ein Release</h2>
+    <pre><code>git checkout develop
+    git checkout -b release/1.4.0
+    git checkout main
+    git merge --no-ff release/1.4.0
+    git tag -a v1.4.0 -m "Release 1.4.0"
+    git checkout develop
+    git merge --no-ff release/1.4.0
+    git branch -d release/1.4.0</code></pre>
+    <h2>Ein Hotfix</h2>
+    <pre><code>git checkout main
+    git checkout -b hotfix/1.4.1
+    git checkout main
+    git merge --no-ff hotfix/1.4.1
+    git tag -a v1.4.1 -m "Hotfix 1.4.1"
+    git checkout develop
+    git merge --no-ff hotfix/1.4.1
+    git branch -d hotfix/1.4.1</code></pre>
+    <h2>Die git-flow-CLI</h2>
+    <pre><code>brew install git-flow-avh
+    git flow init
+    git flow feature start oauth-login
+    git flow feature finish oauth-login</code></pre>
+    <h2>Wann Git Flow passt</h2>
+    <ul>
+      <li>Versionierte, herunterladbare Software.</li>
+      <li>Parallele Wartung mehrerer unterstutzter Versionen.</li>
+      <li>Lange QA-Zyklen.</li>
+    </ul>
+    <h2>Wann es nicht passt</h2>
+    <ul>
+      <li>Kontinuierlich deployte Webapps.</li>
+      <li>Kleine Teams ohne dedizierten Release-Prozess.</li>
+      <li>Trunk-based Engineering-Kulturen.</li>
+    </ul>
+
+- source_title: "Trunk-based development"
+  title: "Trunk-based Development"
+  langcode: de
+  body: |
+    <h2>Das Modell</h2>
+    <p>Trunk-based Development (TBD) halt einen einzelnen lang lebenden Branch und integriert alles haufig.</p>
+    <h2>Zwei Varianten</h2>
+    <ul>
+      <li><strong>Pure TBD</strong>.</li>
+      <li><strong>Kurzlebige Branches</strong>.</li>
+    </ul>
+    <h2>Warum TBD funktioniert</h2>
+    <ul>
+      <li>Konflikte tauchen taglich auf.</li>
+      <li>Trunk ist immer release-fahig.</li>
+      <li>Keine "Big Bang"-Merges.</li>
+      <li>Continuous Integration wird buchstablich.</li>
+    </ul>
+    <h2>Die Herausforderung: unvollstandige Features</h2>
+    <ul>
+      <li><strong>Feature Flags</strong>.</li>
+      <li><strong>Branch by abstraction</strong>.</li>
+      <li><strong>Keystone interfaces</strong>.</li>
+    </ul>
+    <h2>Ein typischer Tag</h2>
+    <pre><code>git checkout main
+    git pull --rebase
+    git checkout -b quick-fix
+    git rebase main
+    git push -u origin quick-fix
+    git checkout main
+    git pull --rebase
+    git branch -d quick-fix</code></pre>
+    <h2>Erforderliche Leitplanken</h2>
+    <ul>
+      <li>Schnelle Tests.</li>
+      <li>Pre-Merge-Checks.</li>
+      <li>Automatisierter Rollback.</li>
+    </ul>
+    <h2>Releases</h2>
+    <pre><code>git tag -a v1.4.0 -m "Release 1.4.0"
+    git push origin v1.4.0</code></pre>
+    <h2>Kulturelle Komponente</h2>
+    <p>TBD ist ebenso Kultur wie Workflow.</p>
+
+- source_title: "GitHub Flow (feature branches + PRs)"
+  title: "GitHub Flow (Feature-Branches + PRs)"
+  langcode: de
+  body: |
+    <h2>Der einfachste Workflow, der funktioniert</h2>
+    <p>GitHub Flow ist ein pragmatisches, leichtgewichtiges Modell.</p>
+    <h2>Die sechs Schritte</h2>
+    <ol>
+      <li>Branch von <code>main</code> erstellen.</li>
+      <li>Commits hinzufugen.</li>
+      <li>Pull Request offnen.</li>
+      <li>Diskutieren und Reviewen.</li>
+      <li>Deploy (optional).</li>
+      <li>Merge zu <code>main</code>.</li>
+    </ol>
+    <h2>Ein Arbeitsbeispiel</h2>
+    <pre><code>git checkout main
+    git pull
+    git checkout -b feature/avatar-upload
+    git push -u origin feature/avatar-upload
+    gh pr create --fill</code></pre>
+    <pre><code>gh pr merge --squash --delete-branch
+    git checkout main
+    git pull</code></pre>
+    <h2>Drei Merge-Strategien</h2>
+    <ul>
+      <li><strong>Merge commit</strong>.</li>
+      <li><strong>Squash and merge</strong>.</li>
+      <li><strong>Rebase and merge</strong>.</li>
+    </ul>
+    <h2>Branch-Schutz</h2>
+    <ul>
+      <li>PR vor Merge erfordern.</li>
+      <li>Status-Checks erfordern.</li>
+      <li>Mindestens ein genehmigender Review.</li>
+      <li>Direkte Pushes verbieten.</li>
+      <li>Optional: lineare Historie erfordern.</li>
+    </ul>
+    <h2>Taglicher Workflow</h2>
+    <pre><code>git checkout main && git pull
+    git checkout -b fix/login-redirect
+    git push -u origin fix/login-redirect
+    gh pr create --title "Fix login redirect" --body "Fixes #123"
+    gh pr merge --squash --delete-branch
+    git checkout main && git pull
+    git branch -d fix/login-redirect</code></pre>
+
+- source_title: "Forking workflow for open source"
+  title: "Fork-Workflow fur Open Source"
+  langcode: de
+  body: |
+    <h2>Warum forken</h2>
+    <p>Sie haben selten Schreibzugriff auf ein Projekt, zu dem Sie beitragen mochten.</p>
+    <h2>Das Setup</h2>
+    <pre><code>git clone https://github.com/yourname/project.git
+    cd project
+    git remote add upstream https://github.com/original-owner/project.git
+    git remote -v</code></pre>
+    <h2>Die Beitragsschleife</h2>
+    <pre><code>git fetch upstream
+    git checkout main
+    git merge upstream/main
+    git push origin main
+
+    git checkout -b feature/improve-error-message
+    git push -u origin feature/improve-error-message
+    gh pr create --repo original-owner/project</code></pre>
+    <h2>Fork synchron halten</h2>
+    <pre><code>git fetch upstream
+    git checkout main
+    git merge upstream/main --ff-only
+    git push origin main
+
+    git checkout feature/improve-error-message
+    git rebase main</code></pre>
+    <pre><code>git push --force-with-lease</code></pre>
+    <h2>Review-Feedback handhaben</h2>
+    <pre><code>git rebase -i upstream/main
+    git push --force-with-lease</code></pre>
+    <h2>Mehrere PRs</h2>
+    <pre><code>git checkout main
+    git pull upstream main
+    git checkout -b feature/another-fix</code></pre>
+    <h2>Commits signieren</h2>
+    <pre><code>git commit -s -m "Fix typo in error message"
+    git config commit.gpgsign true
+    git config user.signingkey YOUR_KEY_ID</code></pre>
+    <h2>Etikette</h2>
+    <ul>
+      <li>CONTRIBUTING.md vor PR lesen.</li>
+      <li>Issue fur nicht-triviale Anderungen offnen.</li>
+      <li>Eine Anliegenheit pro PR.</li>
+      <li>Geduldig sein.</li>
+      <li>Anmutig auf Feedback reagieren.</li>
+    </ul>
+
+- source_title: "Git for non-programmers: writers and document teams"
+  title: "Git fur Nicht-Programmierer: Autoren und Dokumentationsteams"
+  langcode: de
+  body: |
+    <h2>Git ist nicht nur fur Code</h2>
+    <p>Git tracked jede Textdatei: Markdown, AsciiDoc, LaTeX, einfache Prosa.</p>
+    <h2>Ubersetzungsglossar</h2>
+    <ul>
+      <li><strong>Repository</strong> = ein Ordner unter Versionskontrolle.</li>
+      <li><strong>Commit</strong> = ein gespeicherter Snapshot von Anderungen.</li>
+      <li><strong>Branch</strong> = ein paralleler Entwurf.</li>
+      <li><strong>Merge</strong> = einen Branch zuruck in den Hauptentwurf kombinieren.</li>
+      <li><strong>Pull Request</strong> = "bitte uberprufen und akzeptieren".</li>
+    </ul>
+    <h2>Ein einfacher Workflow</h2>
+    <pre><code>git init my-book
+    cd my-book
+    echo "# Chapter 1" > chapter-1.md
+    git add chapter-1.md
+    git commit -m "Add chapter 1 outline"
+
+    git commit -am "Expand chapter 1 introduction"</code></pre>
+    <h2>Eine GUI verwenden</h2>
+    <ul>
+      <li><strong>GitHub Desktop</strong>.</li>
+      <li><strong>Sublime Merge</strong>.</li>
+      <li><strong>Tower</strong>.</li>
+      <li><strong>VS Code</strong>.</li>
+    </ul>
+    <h2>Klartextformate gewinnen</h2>
+    <pre><code>pandoc -o book.pdf chapter-*.md</code></pre>
+    <h2>Ein Satz pro Zeile</h2>
+    <p>Eine gangige Konvention im technischen Schreiben.</p>
+    <h2>Branches fur Entwurfe</h2>
+    <pre><code>git checkout -b draft-second-edition
+    git checkout main
+    git merge draft-second-edition</code></pre>
+    <h2>Mit Editoren zusammenarbeiten</h2>
+    <p>Ein Editor kann das Manuskript forken, auf einem Branch bearbeiten und eine Pull Request offnen.</p>
+    <h2>Backups kostenlos</h2>
+    <p>Push zu einem privaten GitHub- oder GitLab-Repo gibt Ihnen ein Off-Site-Backup.</p>
+    <h2>Dinge zum Ignorieren</h2>
+    <pre><code># .gitignore
+    *.pdf
+    *.docx
+    .DS_Store
+    .vscode/
+    _build/</code></pre>
+
+- source_title: "Using Git with binary files"
+  title: "Git mit Binardateien verwenden"
+  langcode: de
+  body: |
+    <h2>Warum Binaries schwierig sind</h2>
+    <p>Git's Storage-Modell ist fur Text designt.</p>
+    <h2>Diff und Merge</h2>
+    <pre><code># .gitattributes
+    *.pdf binary
+    *.png binary
+    *.zip binary</code></pre>
+    <h2>Benutzerdefinierte Diff-Treiber</h2>
+    <pre><code># .gitattributes
+    *.docx diff=docx
+    *.pdf diff=pdf
+
+    # ~/.gitconfig
+    [diff "docx"]
+        textconv = pandoc --to=plain
+    [diff "pdf"]
+        textconv = pdftotext -layout</code></pre>
+    <h2>Merge-Treiber</h2>
+    <p>Fur die meisten Bilder, Audio und Video ist "Merge" bedeutungslos.</p>
+    <h2>Repo-Bloat reduzieren</h2>
+    <ul>
+      <li>Git LFS verwenden.</li>
+      <li>Zur Build-Zeit generieren.</li>
+      <li>In Object Storage speichern.</li>
+    </ul>
+    <h2>Compilierte Artefakte tracken</h2>
+    <pre><code># .gitignore
+    dist/
+    build/
+    *.jar
+    *.class</code></pre>
+    <h2>Wenn Binaries essenziell sind</h2>
+    <pre><code>git lfs install
+    git lfs track "*.psd"
+    git lfs track "models/*.bin"
+    git add .gitattributes
+    git commit -m "Track design and model files via LFS"</code></pre>
+    <h2>Bereits in Historie befindliche Binaries erkennen</h2>
+    <pre><code>git rev-list --objects --all | \
+      git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' | \
+      awk '/^blob/ {print $3, $4}' | \
+      sort -n | tail -20</code></pre>
+    <h2>Historie aufraumen</h2>
+    <pre><code>git filter-repo --invert-paths --path bigfile.psd</code></pre>
+    <h2>Binare Dateien sperren</h2>
+    <pre><code>git lfs lock design/logo.psd
+    git lfs unlock design/logo.psd</code></pre>
+
+- source_title: "Disaster recovery: what to do when things go wrong"
+  title: "Disaster Recovery: was zu tun ist, wenn Dinge schieflaufen"
+  langcode: de
+  body: |
+    <h2>Stoppen, atmen, nicht pushen</h2>
+    <p>Die erste Regel von Git-Katastrophen: nicht schlimmer machen.</p>
+    <h2>Snapshot vor Recovery</h2>
+    <pre><code>git tag panic-snapshot
+    cp -r .git ~/git-backup-$(date +%s)</code></pre>
+    <h2>Haufige Katastrophen und Fixes</h2>
+    <h3>Schlechter Reset</h3>
+    <pre><code>git reflog
+    git reset --hard HEAD@{1}</code></pre>
+    <h3>Schlechter Rebase</h3>
+    <pre><code>git reflog
+    git reset --hard ORIG_HEAD</code></pre>
+    <h3>Geloschter Branch</h3>
+    <pre><code>git reflog --all
+    git branch recovered &lt;sha&gt;</code></pre>
+    <h3>Force-Push uber einen Teamkollegen</h3>
+    <pre><code>git push --force-with-lease &lt;their-branch-tip&gt;</code></pre>
+    <h3>Geheimnisse committet</h3>
+    <pre><code>git filter-repo --replace-text passwords.txt
+    git push --force --all
+    git push --force --tags</code></pre>
+    <h3>Detached HEAD mit neuen Commits</h3>
+    <pre><code>git checkout main
+    git branch rescued &lt;sha&gt;</code></pre>
+    <h3>Korruptes Repo</h3>
+    <pre><code>git fsck --full
+    git unpack-objects &lt; .git/objects/pack/pack-XXX.pack</code></pre>
+    <h2>Reflog-Spickzettel</h2>
+    <pre><code>git reflog
+    git reflog show feature/x
+    git log -g
+    git fsck --lost-found</code></pre>
+    <h2>Wiederholungen vermeiden</h2>
+    <ul>
+      <li><code>--force-with-lease</code> verwenden.</li>
+      <li><code>pull.ff = only</code> setzen.</li>
+      <li>Lange Reflog-Ablauf konfigurieren.</li>
+      <li>Feature-Branches als Backups pushen.</li>
+      <li><code>gitleaks</code> ausfuhren.</li>
+    </ul>
+
+- source_title: "Git aliases for daily workflows"
+  title: "Git-Aliase fur tagliche Workflows"
+  langcode: de
+  body: |
+    <h2>Aliase, die Miete zahlen</h2>
+    <p>Die ersten zehn Git-Aliase, nach denen jeder greift, decken die Grundlagen ab.</p>
+    <h2>Logging</h2>
+    <pre><code>[alias]
+        l = log --oneline --decorate -20
+        ll = log --oneline --decorate --graph --all
+        lg = log --graph --pretty=format:'%C(yellow)%h%Creset %C(cyan)%an%Creset %s %C(green)(%cr)%Creset %C(red)%d%Creset'
+        recent = "log --pretty=format:'%C(yellow)%h%Creset %s %C(green)(%cr)%Creset' --date=relative -10"</code></pre>
+    <h2>Status und Diffing</h2>
+    <pre><code>[alias]
+        s = status -sb
+        d = diff
+        dc = diff --cached
+        dw = diff --word-diff
+        ds = diff --stat
+        df = "!git diff --color $@ | diff-so-fancy"</code></pre>
+    <h2>Branch-Management</h2>
+    <pre><code>[alias]
+        br = branch
+        brd = branch -d
+        new = checkout -b
+        sw = switch
+        swc = switch -c
+        recent-branches = "for-each-ref --count=10 --sort=-committerdate refs/heads/ --format='%(refname:short)'"
+        gone = "!git fetch --prune && git branch -vv | awk '/: gone]/{print $1}' | xargs -r git branch -D"</code></pre>
+    <h2>Sync-Workflows</h2>
+    <pre><code>[alias]
+        sync = "!git fetch --all --prune && git pull --rebase"
+        update = "!git checkout main && git pull && git checkout - && git rebase main"
+        publish = "!git push -u origin $(git symbolic-ref --short HEAD)"
+        unpublish = "!git push origin --delete $(git symbolic-ref --short HEAD)"</code></pre>
+    <h2>Commit-Abkurzungen</h2>
+    <pre><code>[alias]
+        amend = commit --amend --no-edit
+        reword = commit --amend
+        wip = "!git add -A && git commit -m 'WIP'"
+        unwip = reset --soft HEAD~1
+        save = "!f() { git add -A && git commit -m \"savepoint: ${1:-$(date)}\"; }; f"</code></pre>
+    <h2>Stash-Helfer</h2>
+    <pre><code>[alias]
+        ss = stash save
+        sp = stash pop
+        sl = stash list
+        sa = stash apply</code></pre>
+    <h2>Rebase-Helfer</h2>
+    <pre><code>[alias]
+        rb = rebase
+        rbi = rebase -i
+        rbc = rebase --continue
+        rba = rebase --abort
+        rbs = rebase --skip
+        fixup = "!f() { git commit --fixup $1; }; f"
+        autosquash = "rebase -i --autosquash"</code></pre>
+    <h2>Historie-Erkundung</h2>
+    <pre><code>[alias]
+        who = "shortlog -sn --no-merges"
+        last = log -1 HEAD --stat
+        find = "!f() { git log --all --pretty=format:'%h %s' --grep=\"$1\"; }; f"
+        contains = "branch --contains"
+        first = "log --reverse --pretty=format:'%h %s' -1"</code></pre>
+    <h2>Cleanup</h2>
+    <pre><code>[alias]
+        cleanup = "!git fetch --prune && git branch --merged main | grep -v -E '^\\*|^\\s*(main|master|develop)$' | xargs -r git branch -d"
+        nuke = "!git reset --hard HEAD && git clean -fd"
+        prune-all = "!git fetch --all --prune && git gc --aggressive"</code></pre>
+
+- source_title: "Using git worktree for parallel feature development"
+  title: "git worktree fur parallele Feature-Entwicklung"
+  langcode: de
+  body: |
+    <h2>Das Problem, das Worktrees losen</h2>
+    <p>Sie sind tief in einem Feature, als ein dringender Bug-Report eintrifft.</p>
+    <h2>Worktree hinzufugen</h2>
+    <pre><code>git worktree add ../hotfix-1234 hotfix/login-redirect
+    git worktree add -b hotfix/login-redirect ../hotfix-1234 main</code></pre>
+    <h2>Auflisten und verwalten</h2>
+    <pre><code>git worktree list
+    git worktree remove ../hotfix-1234
+    git worktree prune</code></pre>
+    <h2>Wie es intern funktioniert</h2>
+    <p>Das <code>.git</code> in Ihrem Originalverzeichnis ist das echte Repo.</p>
+    <h2>Konkrete Workflows</h2>
+    <h3>Hotfix ohne Storung</h3>
+    <pre><code>git worktree add ../hotfix main
+    cd ../hotfix
+    git checkout -b hotfix/cve-fix
+    cd -
+    git worktree remove ../hotfix</code></pre>
+    <h3>Lang laufender Vergleich</h3>
+    <pre><code>git worktree add ../old v2.4.0
+    diff -ru ../old/src ./src</code></pre>
+    <h3>PR eines Kollegen reviewen</h3>
+    <pre><code>gh pr checkout 123 --branch pr-123
+    git worktree add ../pr-123 pr-123
+    cd ../pr-123
+    npm test</code></pre>
+    <h2>CI und Worktrees</h2>
+    <pre><code>git worktree add ./build-linux $SHA
+    git worktree add ./build-windows $SHA</code></pre>
+    <h2>Limitierungen</h2>
+    <ul>
+      <li>Derselbe Branch kann nicht in zwei Worktrees ausgecheckt werden.</li>
+      <li>Einige Hooks konnen sich falsch verhalten.</li>
+      <li>Submodule in Worktrees konnen uberraschend sein.</li>
+    </ul>
+    <h2>Hilfreiche Aliase</h2>
+    <pre><code>[alias]
+        wt = worktree
+        wtl = worktree list
+        wta = worktree add
+        wtr = worktree remove</code></pre>
+
+- source_title: "Signing commits for supply chain security"
+  title: "Commits fur Supply-Chain-Sicherheit signieren"
+  langcode: de
+  body: |
+    <h2>Warum signieren</h2>
+    <p>Git's Autor- und Committer-Felder sind unauthentifizierte Metadaten.</p>
+    <h2>Drei Signierungs-Backends</h2>
+    <ul>
+      <li><strong>GPG</strong>.</li>
+      <li><strong>SSH</strong> (Git 2.34+).</li>
+      <li><strong>X.509 / S/MIME</strong>.</li>
+    </ul>
+    <h2>SSH-Signierung (empfohlen)</h2>
+    <pre><code>git config --global gpg.format ssh
+    git config --global user.signingkey ~/.ssh/id_ed25519.pub
+    git config --global commit.gpgsign true
+    git config --global tag.gpgsign true</code></pre>
+    <pre><code>echo "you@example.com $(cat ~/.ssh/id_ed25519.pub)" \
+      &gt;&gt; ~/.config/git/allowed_signers
+    git config --global gpg.ssh.allowedSignersFile ~/.config/git/allowed_signers</code></pre>
+    <h2>GPG-Signierung</h2>
+    <pre><code>gpg --full-generate-key
+    gpg --list-secret-keys --keyid-format=long
+    git config --global user.signingkey 3AA5C34371567BD2
+    git config --global commit.gpgsign true</code></pre>
+    <pre><code>gpg --armor --export 3AA5C34371567BD2</code></pre>
+    <h2>Bestehende Commits signieren</h2>
+    <pre><code>git commit --amend --no-edit -S
+    git rebase -i &lt;base&gt; --exec 'git commit --amend --no-edit -S'</code></pre>
+    <h2>Signaturen verifizieren</h2>
+    <pre><code>git log --show-signature
+    git verify-commit HEAD
+    git verify-tag v1.4.0</code></pre>
+    <h2>Signierte Tags fur Releases</h2>
+    <pre><code>git tag -s v1.4.0 -m "Release 1.4.0"
+    git tag -v v1.4.0</code></pre>
+    <h2>Schlussel-Hygiene</h2>
+    <ul>
+      <li>ed25519-Schlussel verwenden.</li>
+      <li>Mit Passphrase und Agent schutzen.</li>
+      <li>Jahrlich rotieren.</li>
+      <li>Schlussel auf Hardware speichern.</li>
+    </ul>
+
+- source_title: "Migrating from SVN to Git"
+  title: "Von SVN zu Git migrieren"
+  langcode: de
+  body: |
+    <h2>Warum migrieren</h2>
+    <p>SVN funktioniert seit zwei Jahrzehnten. Aber sein zentralisiertes Modell, langsames Branching und Schwierigkeiten mit moderner Tooling-Integration drangen die meisten Teams zu Git.</p>
+    <h2>Zwei Migrationspfade</h2>
+    <ul>
+      <li><strong>git-svn</strong> - Brucke zwischen den Systemen.</li>
+      <li><strong>One-Shot-Konvertierung</strong>.</li>
+    </ul>
+    <h2>Vorbereiten</h2>
+    <pre><code># authors.txt
+    jdoe = Jane Doe &lt;jane@example.com&gt;
+    bsmith = Bob Smith &lt;bob@example.com&gt;</code></pre>
+    <pre><code>svn log --xml https://svn.example.com/repo \
+      | grep author | sort -u \
+      | sed -E 's/.*&gt;(.+)&lt;.*/\1 = \1 &lt;\1@example.com&gt;/'</code></pre>
+    <h2>One-Shot-Konvertierung mit git-svn</h2>
+    <pre><code>git svn clone \
+        --stdlayout \
+        --authors-file=authors.txt \
+        https://svn.example.com/repo \
+        repo.git
+
+    cd repo.git
+    git for-each-ref refs/remotes/origin/tags --format='%(refname:short)' \
+      | while read ref; do
+        tag="${ref#origin/tags/}"
+        git tag "$tag" "$ref"
+        git branch -d -r "$ref"
+      done</code></pre>
+    <h2>Zu einem Git-Host pushen</h2>
+    <pre><code>git remote add origin https://gitlab.example.com/team/repo.git
+    git push -u origin --all
+    git push origin --tags</code></pre>
+    <h2>Migration verifizieren</h2>
+    <ul>
+      <li>Commit-Zahlen vergleichen.</li>
+      <li>Stichproben bei Autoren und Daten.</li>
+      <li>Tag- und Branch-Zahlen sollten ubereinstimmen.</li>
+    </ul>
+    <h2>Externals handhaben</h2>
+    <ul>
+      <li>Externen Code vendoren.</li>
+      <li>Git-Submodule verwenden.</li>
+      <li>Package Manager verwenden.</li>
+    </ul>
+    <h2>SVN ausser Betrieb nehmen</h2>
+    <p>Nach Verifizierung den SVN-Repo einfrieren (read-only).</p>
+
+- source_title: "Migrating from Mercurial to Git"
+  title: "Von Mercurial zu Git migrieren"
+  langcode: de
+  body: |
+    <h2>Warum migrieren</h2>
+    <p>Mercurial und Git sind Schwester-Systeme.</p>
+    <h2>Das Standardtool: <code>fast-export</code></h2>
+    <pre><code>git clone https://github.com/frej/fast-export.git
+    cd ~/path-to-hg-repo
+    git init ../git-repo
+    cd ../git-repo
+    ~/fast-export/hg-fast-export.sh -r ../path-to-hg-repo
+    git checkout HEAD</code></pre>
+    <h2>Autoren-Mapping</h2>
+    <pre><code># authors.txt
+    "Jane Doe" = "Jane Doe &lt;jane@example.com&gt;"
+    "bob" = "Bob Smith &lt;bob@example.com&gt;"</code></pre>
+    <pre><code>~/fast-export/hg-fast-export.sh -r ../hg-repo -A authors.txt</code></pre>
+    <h2>Branch-Behandlung</h2>
+    <ul>
+      <li>Mercurials named branches sind permanente Labels.</li>
+      <li>Git-Branches sind veranderliche Zeiger.</li>
+    </ul>
+    <h2>Geschlossene Branches</h2>
+    <pre><code>git for-each-ref refs/heads/closed-* --format='%(refname:short)' \
+      | xargs -n 1 git branch -D</code></pre>
+    <h2>Tags</h2>
+    <pre><code>hg tags
+    git tag</code></pre>
+    <h2>Integritat verifizieren</h2>
+    <pre><code>hg log --template '{node}\n' | wc -l
+    git log --all --pretty=format:'%H' | wc -l</code></pre>
+    <pre><code>hg cat -r &lt;hg-rev&gt; path/to/file &gt; /tmp/hg-file
+    git show &lt;git-sha&gt;:path/to/file &gt; /tmp/git-file
+    diff /tmp/hg-file /tmp/git-file</code></pre>
+    <h2>Zu einem Git-Host pushen</h2>
+    <pre><code>git remote add origin https://github.com/team/repo.git
+    git push -u origin --all
+    git push origin --tags</code></pre>
+    <h2>Workflow-Ubersetzung</h2>
+    <p>Mercurial-Benutzer sind oft schockiert von Git's Index.</p>
+    <h2>Erweiterungen und Hooks</h2>
+    <p><code>mq</code> → <code>git rebase -i</code>. <code>histedit</code> → auch <code>git rebase -i</code>.</p>
+    <h2>Nachsorge</h2>
+    <p>Mercurial-Repo mindestens einen Release-Zyklus read-only halten.</p>
+
+- source_title: ".gitignore templates by language (Node, Python, Rust, PHP, Java)"
+  title: ".gitignore-Templates nach Sprache (Node, Python, Rust, PHP, Java)"
+  langcode: de
+  body: |
+    <h2>Warum eine gute .gitignore wichtig ist</h2>
+    <p>Jede versehentlich committete <code>node_modules</code>, <code>.env</code> oder kompiliertes Binary ist technische Schuld.</p>
+    <h2>Node.js</h2>
+    <pre><code># Dependencies
+    node_modules/
+    .pnp
+    .pnp.js
+
+    # Build output
+    dist/
+    build/
+    out/
+    .next/
+    .nuxt/
+    .vite/
+
+    # Logs
+    npm-debug.log*
+    yarn-debug.log*
+    yarn-error.log*
+    pnpm-debug.log*
+
+    # Environment
+    .env
+    .env.local
+    .env.*.local
+
+    # Editor
+    .vscode/
+    .idea/
+    *.swp
+
+    # Coverage
+    coverage/
+    .nyc_output/</code></pre>
+    <h2>Python</h2>
+    <pre><code># Byte-compiled
+    __pycache__/
+    *.py[cod]
+    *$py.class
+
+    # Packaging
+    *.egg-info/
+    *.egg
+    build/
+    dist/
+    pip-wheel-metadata/
+
+    # Virtual envs
+    .venv/
+    venv/
+    env/
+    ENV/
+
+    # Tools
+    .pytest_cache/
+    .mypy_cache/
+    .ruff_cache/
+    .tox/
+    .coverage
+    htmlcov/
+
+    # Jupyter
+    .ipynb_checkpoints/
+
+    # Editor
+    .idea/
+    .vscode/
+
+    # Environment
+    .env</code></pre>
+    <h2>Rust</h2>
+    <pre><code># Build output
+    target/
+    Cargo.lock
+
+    # Binaries
+    *.exe
+    *.dll
+    *.so
+    *.dylib
+
+    # Fuzzing
+    artifacts/
+    corpus/
+
+    # IDE
+    .idea/
+    .vscode/
+    *.iml</code></pre>
+    <h2>PHP / Composer</h2>
+    <pre><code>vendor/
+    composer.phar
+
+    # Cache
+    .phpunit.result.cache
+    .php-cs-fixer.cache
+    .phpstan-cache/
+
+    # Symfony / Laravel
+    /var/cache/*
+    /var/log/*
+    /public/uploads/
+    .env
+    .env.local
+
+    # IDE
+    .idea/
+    .vscode/
+    *.iml</code></pre>
+    <h2>Java / Gradle / Maven</h2>
+    <pre><code># Compiled
+    *.class
+    *.jar
+    *.war
+    *.ear
+
+    # Maven
+    target/
+    pom.xml.tag
+    pom.xml.releaseBackup
+    pom.xml.versionsBackup
+
+    # Gradle
+    .gradle/
+    build/
+    !gradle/wrapper/gradle-wrapper.jar
+
+    # IDE
+    .idea/
+    *.iml
+    .classpath
+    .project
+    .settings/
+    .vscode/
+
+    # Logs
+    *.log</code></pre>
+    <h2>Ubergreifende Essentials</h2>
+    <pre><code># OS
+    .DS_Store
+    Thumbs.db
+    desktop.ini
+
+    # Editors
+    *.swp
+    *.bak
+    *~
+    .vscode/
+    .idea/
+
+    # Secrets
+    *.pem
+    *.key
+    .env*
+    !.env.example</code></pre>
+    <h2>Globale gitignore</h2>
+    <pre><code>git config --global core.excludesfile ~/.gitignore_global</code></pre>
+    <h2>Aus Templates generieren</h2>
+    <pre><code>curl -sL https://www.toptal.com/developers/gitignore/api/node,python,visualstudiocode,macos &gt; .gitignore</code></pre>
+    <h2>Auditing</h2>
+    <pre><code>git status --ignored
+    git check-ignore -v path/to/file</code></pre>
+
+- source_title: "Gitattributes for cross-platform line endings"
+  title: "Gitattributes fur plattformubergreifende Zeilenenden"
+  langcode: de
+  body: |
+    <h2>Das Zeilenenden-Problem</h2>
+    <p>Windows verwendet CRLF, Linux und macOS verwenden LF.</p>
+    <h2>Das einfache, robuste Setup</h2>
+    <pre><code># .gitattributes
+    * text=auto eol=lf
+
+    *.{cmd,bat,ps1} text eol=crlf
+
+    *.png binary
+    *.jpg binary
+    *.pdf binary
+    *.zip binary</code></pre>
+    <h2>Wie <code>text=auto</code> funktioniert</h2>
+    <p>Beim Commit schaut Git auf den Dateiinhalt.</p>
+    <h2>Bestehende Repos renormalisieren</h2>
+    <pre><code>git add --renormalize .
+    git commit -m "Normalize line endings"</code></pre>
+    <h2><code>core.autocrlf</code> versus <code>.gitattributes</code></h2>
+    <p><code>.gitattributes</code> gewinnt.</p>
+    <h2>Binaries markieren</h2>
+    <pre><code>*.png binary
+    *.jpg binary
+    *.gif binary
+    *.ico binary
+    *.pdf binary
+    *.zip binary
+    *.tar binary
+    *.gz binary
+    *.dll binary
+    *.exe binary</code></pre>
+    <h2>Per-Datei-Overrides</h2>
+    <pre><code>Makefile     text eol=lf
+    *.sh         text eol=lf
+    *.bat        text eol=crlf
+    *.ps1        text eol=crlf
+    *.csv        text</code></pre>
+    <h2>Diff- und Merge-Treiber</h2>
+    <pre><code>*.docx diff=docx
+    *.pdf diff=pdf
+    composer.lock merge=ours</code></pre>
+    <h2>Verifikation</h2>
+    <pre><code>git check-attr -a path/to/file
+    git ls-files --eol</code></pre>
+
+- source_title: "Code review with git range-diff"
+  title: "Code-Review mit git range-diff"
+  langcode: de
+  body: |
+    <h2>Das Problem, das range-diff lost</h2>
+    <p>Ein Mitwirkender pusht v1, dann v2 nach Review-Feedback.</p>
+    <h2>Der grundlegende Aufruf</h2>
+    <pre><code>git range-diff main..v1 main..v2</code></pre>
+    <h2>Ausgabe lesen</h2>
+    <pre><code>1:  abc1234 = 1:  def5678 Add login form
+    2:  234abcd ! 2:  9876fed Validate email format
+        @@ src/login.js
+    -    if (!email.includes("@")) {
+    +    if (!EMAIL_REGEX.test(email)) {
+    3:  &lt;new&gt;    &gt; 3:  111aaaa Add unit tests for validator</code></pre>
+    <ul>
+      <li><code>=</code> Commits identisch.</li>
+      <li><code>!</code> Commits mit gleicher Absicht aber unterschiedlich.</li>
+      <li><code>&gt;</code> Commits nur rechts.</li>
+      <li><code>&lt;</code> Commits nur links.</li>
+    </ul>
+    <h2>Pairing-Logik</h2>
+    <p>range-diff verwendet Commit-Metadaten zum Paaren.</p>
+    <h2>Force-pushed PRs reviewen</h2>
+    <pre><code>git fetch origin pr/123:pr-123-old
+    git fetch origin pr/123
+    git range-diff main..pr-123-old main..origin/pr/123</code></pre>
+    <h2>range-diff wahrend Rebase</h2>
+    <pre><code>git rebase -i HEAD~5
+    git range-diff ORIG_HEAD HEAD</code></pre>
+    <h2>range-diff fur Releases</h2>
+    <pre><code>git range-diff origin/release-1.4 origin/release-1.5</code></pre>
+    <h2>Vergleich tunen</h2>
+    <pre><code>git range-diff --creation-factor=80 base..v1 base..v2
+    git range-diff --no-patch base..v1 base..v2</code></pre>
+    <h2>Format-patch-Integration</h2>
+    <pre><code>git format-patch --range-diff=v1 --cover-letter -3</code></pre>
+
+- source_title: "Squash-merging vs merge commits vs rebasing: when to use each"
+  title: "Squash-Merging vs Merge Commits vs Rebasing: wann was verwenden"
+  langcode: de
+  body: |
+    <h2>Drei Strategien, drei Historien</h2>
+    <p>Beim Integrieren eines Feature-Branches in <code>main</code> haben Sie drei Optionen.</p>
+    <h2>Merge Commit</h2>
+    <pre><code>git checkout main
+    git merge --no-ff feature/login</code></pre>
+    <p><strong>Pro:</strong> bewahrt die Wahrheit der Entwicklung. <strong>Contra:</strong> nicht-lineare Historie.</p>
+    <h2>Squash and merge</h2>
+    <pre><code>git checkout main
+    git merge --squash feature/login
+    git commit -m "Add OAuth login"</code></pre>
+    <p><strong>Pro:</strong> lineare Historie. <strong>Contra:</strong> verliert Commit-Detail.</p>
+    <h2>Rebase and merge</h2>
+    <pre><code>git checkout feature/login
+    git rebase main
+    git checkout main
+    git merge --ff-only feature/login</code></pre>
+    <p><strong>Pro:</strong> linear; bewahrt atomare Commits. <strong>Contra:</strong> erfordert Disziplin.</p>
+    <h2>Entscheidungsmatrix</h2>
+    <ul>
+      <li><strong>Bibliothek oder Kernel-Style-Projekt</strong> - rebase and merge.</li>
+      <li><strong>App mit disziplinierten Mitwirkenden</strong> - rebase and merge.</li>
+      <li><strong>App mit gemischten Disziplinen</strong> - squash.</li>
+      <li><strong>Projekt, wo parallele Branches zahlen</strong> - merge commits.</li>
+    </ul>
+    <h2>Auf dem Host konfigurieren</h2>
+    <pre><code>gh api -X PATCH repos/:owner/:repo \
+      -F allow_merge_commit=false \
+      -F allow_squash_merge=true \
+      -F allow_rebase_merge=true</code></pre>
+    <h2>Lokale Aquivalente</h2>
+    <pre><code># Merge commit
+    git merge --no-ff feature
+
+    # Squash
+    git merge --squash feature && git commit
+
+    # Rebase and FF
+    git rebase main feature
+    git checkout main
+    git merge --ff-only feature</code></pre>
+    <h2>Reverten</h2>
+    <ul>
+      <li>Merge commit: <code>git revert -m 1 &lt;merge-sha&gt;</code>.</li>
+      <li>Squash: <code>git revert &lt;squash-sha&gt;</code>.</li>
+      <li>Rebase: <code>git revert &lt;sha1&gt; &lt;sha2&gt;...</code>.</li>
+    </ul>
+
+- source_title: "Using git blame for archaeology"
+  title: "git blame fur Archaologie verwenden"
+  langcode: de
+  body: |
+    <h2>Warum blame</h2>
+    <p>Blame beantwortet "wer hat diese Zeile geschrieben und warum?".</p>
+    <h2>Die Grundlagen</h2>
+    <pre><code>git blame src/checkout.js
+    git blame -L 40,60 src/checkout.js</code></pre>
+    <h2>Verschobenem Code folgen</h2>
+    <pre><code>git blame -M src/checkout.js
+    git blame -C src/checkout.js
+    git blame -CCC src/checkout.js</code></pre>
+    <h2>Rausch-Commits ignorieren</h2>
+    <pre><code># .git-blame-ignore-revs
+    abc1234567890   # Apply prettier across codebase
+    def4567890123   # Apply black to all Python</code></pre>
+    <pre><code>git blame --ignore-revs-file=.git-blame-ignore-revs src/checkout.js
+    git config blame.ignoreRevsFile .git-blame-ignore-revs</code></pre>
+    <h2>Blame nach Inhalt</h2>
+    <pre><code>git log -S 'EMAIL_REGEX' -- src/
+    git log -G 'email.*regex' --pickaxe-regex -- src/</code></pre>
+    <h2>Eine Regression jagen</h2>
+    <pre><code>git blame -L 40,60 src/checkout.js
+    git show &lt;sha&gt;
+    git log --follow -p src/checkout.js
+    git bisect start
+    git bisect bad HEAD
+    git bisect good &lt;earlier-sha&gt;</code></pre>
+    <h2>Annotierte Ansichten in Editoren</h2>
+    <p>VS Codes GitLens, JetBrains' eingebautes Annotate, <code>fugitive.vim</code>.</p>
+    <h2>Reverse Blame</h2>
+    <pre><code>git log --reverse --follow -p -L 40,60:src/checkout.js</code></pre>
+    <h2>Blame ohne Historie</h2>
+    <pre><code>git blame --line-porcelain src/checkout.js | \
+      sed -n 's/^author //p' | sort | uniq -c | sort -rn</code></pre>
+    <h2>Etikette</h2>
+    <p>Blame ist zum Verstehen, nicht zum Fingerzeigen.</p>
+
+- source_title: "The git log --all --graph one-liner"
+  title: "Der git log --all --graph One-Liner"
+  langcode: de
+  body: |
+    <h2>Der Befehl, den jeder kopiert</h2>
+    <pre><code>git log --all --graph --decorate --oneline</code></pre>
+    <h2>Anatomie</h2>
+    <ul>
+      <li><code>--all</code> - jeden Branch und Tag einbeziehen.</li>
+      <li><code>--graph</code> - Eltern/Kind-Graph zeichnen.</li>
+      <li><code>--decorate</code> - Commits mit Branch- und Tag-Namen annotieren.</li>
+      <li><code>--oneline</code> - Kurzform.</li>
+    </ul>
+    <h2>Bessere Formatierung</h2>
+    <pre><code>git log --all --graph \
+      --pretty=format:'%C(yellow)%h%Creset %C(cyan)%an%Creset %s %C(green)(%cr)%Creset%C(red)%d%Creset' \
+      --abbrev-commit</code></pre>
+    <h2>Zu einem Alias machen</h2>
+    <pre><code>git config --global alias.lg "log --all --graph --pretty=format:'%C(yellow)%h%Creset %C(cyan)%an%Creset %s %C(green)(%cr)%Creset%C(red)%d%Creset' --abbrev-commit"</code></pre>
+    <h2>Filtern</h2>
+    <pre><code>git lg -20
+    git lg --since='2 weeks ago'
+    git lg --author='Jane'
+    git lg --grep='OAuth'
+    git lg -- src/checkout.js</code></pre>
+    <h2>Nur First-Parent</h2>
+    <pre><code>git log --first-parent --oneline main</code></pre>
+    <h2>Vollgraph fur ein Feature</h2>
+    <pre><code>git log --graph --boundary main...feature/oauth</code></pre>
+    <h2>Live-Graph-Viewer</h2>
+    <pre><code>tig --all
+    gitk --all</code></pre>
+    <h2>Performance</h2>
+    <pre><code>git log --all --graph --oneline -n 100</code></pre>
+
+- source_title: "Finding big files in history"
+  title: "Grosse Dateien in der Historie finden"
+  langcode: de
+  body: |
+    <h2>Warum Grosse zahlt</h2>
+    <p>Repository-Grosse wirkt sich auf Klon-Geschwindigkeit aus.</p>
+    <h2>Der klassische One-Liner</h2>
+    <pre><code>git rev-list --objects --all | \
+      git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' | \
+      awk '/^blob/ {print $3, $4}' | \
+      sort -n | tail -20</code></pre>
+    <h2>Grosse nach Verzeichnis</h2>
+    <pre><code>git ls-tree -r -l HEAD | \
+      awk '{ size[$5] += $4 } END { for (f in size) print size[f], f }' | \
+      sort -rn | head -20</code></pre>
+    <h2>Pack-Datei-Inspektion</h2>
+    <pre><code>git verify-pack -v .git/objects/pack/pack-*.idx | \
+      sort -k 3 -n | tail -20</code></pre>
+    <h2><code>git-sizer</code> verwenden</h2>
+    <pre><code>brew install git-sizer
+    git-sizer --verbose</code></pre>
+    <h2>Einen spezifischen Blob verfolgen</h2>
+    <pre><code>git rev-list --all --objects | grep &lt;sha&gt;
+    git log --all --find-object=&lt;sha&gt;</code></pre>
+    <h2>Grosse Dateien aus der Historie entfernen</h2>
+    <pre><code>pip install git-filter-repo
+    git filter-repo --strip-blobs-bigger-than 50M
+    git filter-repo --invert-paths --path huge.psd</code></pre>
+    <h2>Cleanup verifizieren</h2>
+    <pre><code>git gc --aggressive --prune=now
+    du -sh .git
+    git-sizer</code></pre>
+    <h2>Wiederholung verhindern</h2>
+    <pre><code>#!/usr/bin/env bash
+    MAX=10000000
+    git diff --cached --numstat | while read added removed file; do
+      size=$(git cat-file -s :$file 2&gt;/dev/null || echo 0)
+      if [ "$size" -gt "$MAX" ]; then
+        echo "Refusing to commit $file: $size bytes" &gt;&2
+        exit 1
+      fi
+    done</code></pre>
+
+- source_title: "Detaching from a remote with git remote remove"
+  title: "Mit git remote remove vom Remote losen"
+  langcode: de
+  body: |
+    <h2>Wann Sie sich losen wollen</h2>
+    <p>Sie haben ein Repo geforkt, Ihre Arbeit gepusht und wollen jetzt unabhangig veroffentlichen.</p>
+    <h2>Remotes auflisten</h2>
+    <pre><code>git remote -v</code></pre>
+    <h2>Ein Remote entfernen</h2>
+    <pre><code>git remote remove origin
+    git remote -v</code></pre>
+    <h2>Ein neues origin hinzufugen</h2>
+    <pre><code>git remote add origin git@github.com:yourname/project.git
+    git push -u origin --all
+    git push -u origin --tags</code></pre>
+    <h2>Stattdessen umbenennen</h2>
+    <pre><code>git remote rename origin upstream
+    git remote add origin git@github.com:yourname/project.git
+    git fetch --all
+    git remote -v</code></pre>
+    <h2>Eine Remote-URL aktualisieren ohne entfernen</h2>
+    <pre><code>git remote set-url origin git@gitlab.com:team/project.git
+    git remote set-url --push origin git@gitlab.com:team/project.git</code></pre>
+    <h2>Tracking-Refs nach Loslosung entfernen</h2>
+    <pre><code>git for-each-ref refs/remotes/origin --format='%(refname)' | \
+      xargs -n 1 git update-ref -d</code></pre>
+    <h2>Vollstandig vom Upstream losen</h2>
+    <pre><code># Option 1: keep history but rewrite the parent
+    git checkout --orphan new-main
+    git add -A
+    git commit -m "Initial commit (rebased history)"
+
+    # Option 2: keep history, just publish to a new remote
+    git remote remove origin
+    git remote add origin &lt;new-url&gt;
+    git push -u origin --all</code></pre>
+    <h2>Zu mehreren Remotes pushen</h2>
+    <pre><code>git remote set-url --add --push origin git@github.com:user/repo.git
+    git remote set-url --add --push origin git@gitlab.com:user/repo.git
+    git push origin main</code></pre>
+    <h2>Im Nachhinein prufen</h2>
+    <pre><code>git config --get-regexp '^remote\\.'
+    git remote show origin</code></pre>
+    <h2>Haufige Fallstricke</h2>
+    <ul>
+      <li>Vergessen, Tags auf das neue Remote zu pushen.</li>
+      <li>CI-Konfiguration nicht aktualisieren.</li>
+      <li>Submodule auf altes Remote zeigend.</li>
+    </ul>
+
+- source_title: "Moving files between repositories preserving history"
+  title: "Dateien zwischen Repositories bewegen mit Erhalt der Historie"
+  langcode: de
+  body: |
+    <h2>Das Ziel</h2>
+    <p>Sie wollen ein Verzeichnis von einem Repo zu einem anderen verschieben und die volle Commit-Historie erhalten.</p>
+    <h2>Schritt 1: die Teilmenge extrahieren</h2>
+    <pre><code>git clone &lt;source-repo&gt; source-extract
+    cd source-extract
+    git filter-repo --path packages/widget --path-rename packages/widget:</code></pre>
+    <h2>Schritt 2: in das Ziel importieren</h2>
+    <pre><code>cd ../target-repo
+    git remote add widget-source ../source-extract
+    git fetch widget-source
+    git merge --allow-unrelated-histories widget-source/main</code></pre>
+    <h2>Schritt 3: die Dateien platzieren</h2>
+    <pre><code># Before merging, in source-extract:
+    git filter-repo --to-subdirectory-filter vendor/widget</code></pre>
+    <h2>Aufraumen</h2>
+    <pre><code>git remote remove widget-source
+    rm -rf ../source-extract</code></pre>
+    <h2>Historie verifizieren</h2>
+    <pre><code>git log --follow vendor/widget/index.js
+    git blame vendor/widget/index.js</code></pre>
+    <h2>Dateien aus der Quelle entfernen</h2>
+    <pre><code>cd source-repo
+    git filter-repo --invert-paths --path packages/widget</code></pre>
+    <h2>Alternative: <code>git subtree</code></h2>
+    <pre><code>git subtree add --prefix=vendor/widget &lt;source-url&gt; main --squash</code></pre>
+    <pre><code>git subtree pull --prefix=vendor/widget &lt;source-url&gt; main --squash</code></pre>
+    <h2>Fallstricke vermeiden</h2>
+    <ul>
+      <li>Immer auf Klonen arbeiten, nicht auf primaren Checkouts.</li>
+      <li>Auf einem frischen Klon ausfuhren.</li>
+      <li>Mit dem Team koordinieren.</li>
+      <li>Tags werden von <code>filter-repo</code> erhalten.</li>
+    </ul>
+
+- source_title: "Creating a bare repository for sharing"
+  title: "Ein Bare-Repository zum Teilen erstellen"
+  langcode: de
+  body: |
+    <h2>Was "bare" bedeutet</h2>
+    <p>Ein Bare-Repository enthalt nur den Inhalt von <code>.git</code> — kein Working Tree, kein Checkout.</p>
+    <h2>Eines erstellen</h2>
+    <pre><code>mkdir myproject.git
+    cd myproject.git
+    git init --bare</code></pre>
+    <h2>Dazu pushen</h2>
+    <pre><code>cd ~/work/myproject
+    git remote add origin /path/to/myproject.git
+    git push -u origin main</code></pre>
+    <h2>Auf einem Server teilen</h2>
+    <pre><code>scp -r myproject.git user@server:/srv/git/
+    chgrp -R devs /srv/git/myproject.git
+    chmod -R g+rwX /srv/git/myproject.git
+    find /srv/git/myproject.git -type d -exec chmod g+s {} +</code></pre>
+    <pre><code># /srv/git/myproject.git/config
+    [core]
+        sharedRepository = group</code></pre>
+    <pre><code>git init --bare --shared=group myproject.git</code></pre>
+    <h2>Klonen</h2>
+    <pre><code>git clone user@server:/srv/git/myproject.git</code></pre>
+    <h2>SSH versus HTTP</h2>
+    <p>Fur kleine Teams gibt SSH-Zugriff plus <code>git-shell</code> als Login-Shell ein sauberes, sicheres Setup.</p>
+    <h2>Self-Hosting-Tools</h2>
+    <p>Fur mehr als eine Handvoll Repositorys, Gitea, Forgejo, GitLab Community Edition.</p>
+    <h2>Mirror und Backups</h2>
+    <pre><code>git clone --mirror &lt;url&gt; backup.git
+    cd backup.git
+    git remote update --prune</code></pre>
+    <h2>Hooks auf der Bare-Seite</h2>
+    <pre><code># /srv/git/myproject.git/hooks/post-receive
+    #!/usr/bin/env bash
+    while read old new ref; do
+      if [ "$ref" = "refs/heads/main" ]; then
+        cd /srv/www/myproject &&
+          git --git-dir=. fetch /srv/git/myproject.git main &&
+          git --git-dir=. reset --hard FETCH_HEAD
+      fi
+    done</code></pre>
+
+- source_title: "Git hooks for code quality: linting before commit"
+  title: "Git-Hooks fur Code-Qualitat: Linting vor Commit"
+  langcode: de
+  body: |
+    <h2>Warum Pre-Commit-Hooks</h2>
+    <p>Der gunstigste Ort, einen Lint-Fehler zu fangen, ist auf der Maschine des Entwicklers.</p>
+    <h2>Der einfachste Hook</h2>
+    <pre><code># .git/hooks/pre-commit
+    #!/usr/bin/env bash
+    set -e
+    npm run lint --silent
+    npm run format:check --silent</code></pre>
+    <pre><code>chmod +x .git/hooks/pre-commit</code></pre>
+    <h2>Nur geanderte Dateien linten</h2>
+    <pre><code>#!/usr/bin/env bash
+    set -e
+    files=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\\.(js|ts|tsx)$' || true)
+    if [ -z "$files" ]; then
+      exit 0
+    fi
+    echo "$files" | xargs npx eslint --max-warnings=0
+    echo "$files" | xargs npx prettier --check</code></pre>
+    <h2>Husky fur Node-Projekte</h2>
+    <pre><code>npm install --save-dev husky lint-staged
+    npx husky init
+
+    # .husky/pre-commit
+    npx lint-staged
+
+    # package.json
+    "lint-staged": {
+      "*.{js,ts,tsx}": ["eslint --fix", "prettier --write"]
+    }</code></pre>
+    <h2>Das pre-commit Framework</h2>
+    <pre><code># .pre-commit-config.yaml
+    repos:
+      - repo: https://github.com/pre-commit/pre-commit-hooks
+        rev: v4.6.0
+        hooks:
+          - id: trailing-whitespace
+          - id: end-of-file-fixer
+          - id: check-merge-conflict
+      - repo: https://github.com/astral-sh/ruff-pre-commit
+        rev: v0.5.0
+        hooks:
+          - id: ruff
+          - id: ruff-format</code></pre>
+    <pre><code>pip install pre-commit
+    pre-commit install</code></pre>
+    <h2>Hooks via <code>core.hooksPath</code> teilen</h2>
+    <pre><code>git config core.hooksPath .githooks</code></pre>
+    <h2>Bei Bedarf umgehen</h2>
+    <pre><code>git commit --no-verify -m "WIP"</code></pre>
+    <h2>Haufige Pre-Commit-Checks</h2>
+    <ul>
+      <li>Lint und Format.</li>
+      <li>Type-Checks.</li>
+      <li>Trailing Whitespace.</li>
+      <li>Merge-Konflikt-Marker.</li>
+      <li>Geheimnis-Erkennung.</li>
+      <li>Datei-Grossenlimits.</li>
+    </ul>
+
+- source_title: "Git hooks for testing: preventing broken pushes"
+  title: "Git-Hooks fur Tests: kaputte Pushes verhindern"
+  langcode: de
+  body: |
+    <h2>Der Fall fur Pre-Push-Tests</h2>
+    <p>Ein kaputter Push verschwendet die Zeit aller.</p>
+    <h2>Der einfachste Pre-Push-Hook</h2>
+    <pre><code># .git/hooks/pre-push
+    #!/usr/bin/env bash
+    set -e
+    npm test --silent</code></pre>
+    <pre><code>chmod +x .git/hooks/pre-push</code></pre>
+    <h2>Lesen, was gepusht wird</h2>
+    <pre><code>#!/usr/bin/env bash
+    while read local_ref local_sha remote_ref remote_sha; do
+      if [ "$local_sha" = "0000000000000000000000000000000000000000" ]; then
+        continue
+      fi
+      git checkout "$local_sha" -- .
+      npm test
+    done</code></pre>
+    <h2>Selektive Test-Ausfuhrung</h2>
+    <pre><code>changed=$(git diff --name-only origin/main...HEAD)
+    affected=$(./scripts/find-affected-tests.sh "$changed")
+    npx jest $affected</code></pre>
+    <h2>Branch-bewusste Durchsetzung</h2>
+    <pre><code>protected_branches=("main" "release")
+    branch=$(git symbolic-ref --short HEAD)
+    if [[ " ${protected_branches[*]} " =~ " $branch " ]]; then
+      echo "Refusing to push directly to $branch" &gt;&2
+      exit 1
+    fi</code></pre>
+    <h2>Husky fur geteilte Pre-Push-Hooks</h2>
+    <pre><code># .husky/pre-push
+    npm test --silent
+    npm run typecheck --silent</code></pre>
+    <h2>Performance-Tipps</h2>
+    <ul>
+      <li>Tests parallel ausfuhren.</li>
+      <li>Unveranderte Tests uberspringen.</li>
+      <li>Transformationen cachen.</li>
+      <li>Schwere Integrationstests fur CI reservieren.</li>
+    </ul>
+    <h2>Umgehen</h2>
+    <pre><code>git push --no-verify</code></pre>
+    <h2>Server-seitige Hooks</h2>
+    <pre><code># /srv/git/repo.git/hooks/pre-receive
+    #!/usr/bin/env bash
+    while read old new ref; do
+      if ! gitleaks detect --redact --no-banner --staged 2&gt;/dev/null; then
+        echo "Push rejected: secrets detected" &gt;&2
+        exit 1
+      fi
+    done</code></pre>
+    <h2>Die richtige Grenze</h2>
+    <ul>
+      <li><strong>Pre-Commit</strong>: instantane Checks.</li>
+      <li><strong>Pre-Push</strong>: Unit-Tests, voller Lint.</li>
+      <li><strong>CI</strong>: Integrationstests, Smoke-Tests.</li>
+    </ul>
+
+- source_title: "Keeping secrets out of Git"
+  title: "Geheimnisse aus Git heraushalten"
+  langcode: de
+  body: |
+    <h2>Die Kardinalregel</h2>
+    <p>Alles in Git committet ist permanent bis zur aktiven Umschreibung.</p>
+    <h2>Schicht 1: niemals Geheimnisse committen</h2>
+    <pre><code># .env.example
+    DATABASE_URL=postgres://localhost/myapp
+    JWT_SECRET=replace-me
+
+    # .gitignore
+    .env
+    .env.local
+    .env.*.local
+    *.pem
+    *.key
+    secrets/</code></pre>
+    <h2>Schicht 2: Pre-Commit-Erkennung</h2>
+    <pre><code>brew install gitleaks
+    repos:
+      - repo: https://github.com/gitleaks/gitleaks
+        rev: v8.18.0
+        hooks:
+          - id: gitleaks</code></pre>
+    <pre><code>gitleaks detect --redact --source=.</code></pre>
+    <h2>Schicht 3: server-seitige Ablehnung</h2>
+    <p>Ein <code>pre-receive</code>-Hook auf dem Server kann Pushes mit Geheimnissen ablehnen.</p>
+    <h2>Schicht 4: CI-Scan</h2>
+    <pre><code>- uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}</code></pre>
+    <h2>Schicht 5: verschlusselte Geheimnisse in Git</h2>
+    <pre><code>sops -e -i secrets.yaml
+    sops secrets.yaml
+    git add secrets.yaml
+    git commit -m "Update encrypted secrets"</code></pre>
+    <h2>Wenn ein Geheimnis durchsickert</h2>
+    <ol>
+      <li><strong>Sofort rotieren.</strong></li>
+      <li><strong>Nutzungslogs auditieren.</strong></li>
+      <li><strong>Historie umschreiben.</strong></li>
+      <li><strong>Force-Push.</strong></li>
+      <li><strong>Benachrichtigen.</strong></li>
+    </ol>
+    <pre><code># patterns.txt
+    AKIAIOSFODNN7EXAMPLE==&gt;REDACTED
+    sk_live_abc123==&gt;REDACTED</code></pre>
+    <h2>Wiederherstellung auf dem Host</h2>
+    <p>Selbst nach Force-Push behalt GitHub "dangling" Commits zugreifbar fur SHA fur einige Zeit.</p>
+
+- source_title: "Fixing a bad merge"
+  title: "Einen schlechten Merge beheben"
+  langcode: de
+  body: |
+    <h2>"Schlechter Merge" definieren</h2>
+    <p>Ein schlechter Merge kann bedeuten: Sie haben den falschen Branch gemerged, Sie haben Konflikte falsch gelost, der Merge fuhrte eine Regression ein.</p>
+    <h2>Fall 1: noch nicht gepusht</h2>
+    <pre><code>git reset --hard ORIG_HEAD</code></pre>
+    <h2>Fall 2: gepusht, andere haben nicht gepullt</h2>
+    <pre><code>git reset --hard ORIG_HEAD
+    git push --force-with-lease</code></pre>
+    <h2>Fall 3: gepusht, andere haben gepullt</h2>
+    <pre><code>git revert -m 1 &lt;merge-sha&gt;</code></pre>
+    <h2>Nach einem Revert erneut mergen</h2>
+    <pre><code>git revert &lt;revert-sha&gt;
+    git checkout feature/login
+    git rebase main
+    git checkout main
+    git merge feature/login</code></pre>
+    <h2>Fall 4: schlechte Konfliktauflosung</h2>
+    <pre><code>git checkout main
+    git commit -m "Fix conflict resolution from merge of feature/login"</code></pre>
+    <h2>Fall 5: falschen Branch gemerged</h2>
+    <pre><code>git reset --hard ORIG_HEAD
+    git merge correct-branch</code></pre>
+    <h2>Einen Merge inspizieren</h2>
+    <pre><code>git log -1 --format=fuller --stat HEAD
+    git show -m HEAD
+    git diff HEAD^1 HEAD
+    git diff HEAD^2 HEAD</code></pre>
+    <h2>Schlechte Merges vermeiden</h2>
+    <ul>
+      <li>Immer <code>--no-ff</code> auf lang lebenden Branches.</li>
+      <li>CI fur das Merge-Ergebnis konfigurieren.</li>
+      <li><code>git mergetool</code> verwenden.</li>
+      <li>Tests sofort nach jedem Merge ausfuhren.</li>
+    </ul>
+    <h2>Das Recovery-Toolkit</h2>
+    <ul>
+      <li><code>ORIG_HEAD</code>.</li>
+      <li><code>git reflog</code>.</li>
+      <li><code>git revert -m</code>.</li>
+      <li><code>git push --force-with-lease</code>.</li>
+    </ul>
+
+- source_title: "Comparing branches with git diff branch1..branch2"
+  title: "Branches mit git diff branch1..branch2 vergleichen"
+  langcode: de
+  body: |
+    <h2>Zwei-Punkt versus Drei-Punkt</h2>
+    <p>Die am meisten verwirrende Syntax in Git: <code>..</code> versus <code>...</code>.</p>
+    <h2>Fur <code>git log</code></h2>
+    <pre><code>git log main..feature
+    git log main...feature</code></pre>
+    <h2>Fur <code>git diff</code></h2>
+    <pre><code>git diff main..feature
+    git diff main...feature</code></pre>
+    <h2>Das PR-Review-Muster</h2>
+    <pre><code>git diff main...feature/oauth</code></pre>
+    <h2>Commits in einem Branch auflisten</h2>
+    <pre><code>git log main..feature --oneline
+    git log feature --not main --oneline
+    git rev-list main..feature</code></pre>
+    <h2>Commits eindeutig auf jeder Seite zeigen</h2>
+    <pre><code>git log --left-right --oneline main...feature</code></pre>
+    <h2>Stat-Ubersicht</h2>
+    <pre><code>git diff --stat main..feature
+    git diff --shortstat main...feature</code></pre>
+    <h2>Spezifische Dateien diffen</h2>
+    <pre><code>git diff main..feature -- src/checkout.js
+    git diff main...feature -- 'src/**'</code></pre>
+    <h2>Uber Remotes hinweg vergleichen</h2>
+    <pre><code>git fetch origin
+    git diff origin/main...origin/feature</code></pre>
+    <h2>Tools fur reichhaltigeren Vergleich</h2>
+    <pre><code>git difftool main...feature
+    git range-diff main..v1 main..v2
+    gh pr diff 123</code></pre>
+    <h2>Wort-Level- und Stat-Level-Ansichten</h2>
+    <pre><code>git diff --word-diff main...feature
+    git diff --color-words main...feature
+    git diff --numstat main..feature</code></pre>
+    <h2>Das mentale Modell</h2>
+    <ul>
+      <li><code>A..B</code> - "von A nach B".</li>
+      <li><code>A...B</code> - "zwischen A und B".</li>
+    </ul>
+
+- source_title: "Cherry-picking from another branch without merging"
+  title: "Cherry-pick aus einem anderen Branch ohne Merge"
+  langcode: de
+  body: |
+    <h2>Was Cherry-pick tut</h2>
+    <p><code>git cherry-pick</code> nimmt einen Commit von einem Branch und wendet ihn als neuen Commit auf dem aktuellen Branch an.</p>
+    <h2>Die grundlegende Operation</h2>
+    <pre><code>git checkout release/1.4
+    git cherry-pick &lt;sha&gt;</code></pre>
+    <h2>Cherry-pick von Bereichen</h2>
+    <pre><code>git cherry-pick &lt;sha1&gt; &lt;sha2&gt; &lt;sha3&gt;
+    git cherry-pick &lt;older&gt;..&lt;newer&gt;
+    git cherry-pick &lt;older&gt;^..&lt;newer&gt;</code></pre>
+    <h2>Cherry-pick mit Konflikten</h2>
+    <pre><code>git cherry-pick &lt;sha&gt;
+    git add &lt;file&gt;
+    git cherry-pick --continue
+    git cherry-pick --abort</code></pre>
+    <h2>Herkunft in der Nachricht aufzeichnen</h2>
+    <pre><code>git cherry-pick -x &lt;sha&gt;</code></pre>
+    <h2>Merges cherry-picken</h2>
+    <pre><code>git cherry-pick -m 1 &lt;merge-sha&gt;</code></pre>
+    <h2>Cherry-pick versus Merge</h2>
+    <ul>
+      <li><strong>Merge</strong> - integriert einen ganzen Branch.</li>
+      <li><strong>Cherry-pick</strong> - kopiert einen spezifischen Commit.</li>
+    </ul>
+    <h2>Das Problem doppelter Commits</h2>
+    <pre><code>git cherry main feature
+    git rebase --skip</code></pre>
+    <h2>Leere Cherry-picks</h2>
+    <pre><code>git cherry-pick --allow-empty &lt;sha&gt;
+    git cherry-pick --skip</code></pre>
+    <h2>Workflows, in denen Cherry-pick glanzt</h2>
+    <ul>
+      <li>Hotfix von <code>main</code> zu einem Release-Branch.</li>
+      <li>Einen Fix von einem Feature-Branch auf <code>main</code> bringen.</li>
+      <li>Einen wahrend eines Rebase verlorenen Commit erneut anwenden.</li>
+      <li>Selektives Weiterleiten von Fixes zwischen Wartungslinien.</li>
+    </ul>
+    <h2>Best Practices</h2>
+    <ul>
+      <li>Immer <code>-x</code> fur Backports.</li>
+      <li>Den Quell-PR oder Ticket referenzieren.</li>
+      <li>Tests auf dem Zielbranch ausfuhren.</li>
+    </ul>
+
+- source_title: "Git shorthand: useful abbreviations and shortcuts"
+  title: "Git-Shorthand: nutzliche Abkurzungen und Shortcuts"
+  langcode: de
+  body: |
+    <h2>Eingebautes Shorthand</h2>
+    <p>Neben Aliassen hat Git eine Reihe eingebauter Shorthand-Notationen.</p>
+    <h2>HEAD-Relativen</h2>
+    <pre><code>HEAD
+    HEAD~
+    HEAD~1
+    HEAD~5
+    HEAD^
+    HEAD^^
+    HEAD^2
+    HEAD^{tree}</code></pre>
+    <h2>Reflog-Referenzen</h2>
+    <pre><code>HEAD@{1}
+    HEAD@{yesterday}
+    HEAD@{2.hours.ago}
+    main@{push}</code></pre>
+    <h2>Branch-Shorthand</h2>
+    <pre><code>git checkout -
+    git switch -
+    git merge @{u}
+    git rebase @{u}
+    git push HEAD</code></pre>
+    <h2>SHA-Shorthand</h2>
+    <pre><code>git show abc
+    git checkout abc1234</code></pre>
+    <pre><code>git config --global core.abbrev 12</code></pre>
+    <h2>Range-Shorthand</h2>
+    <pre><code>main..feature
+    main...feature
+    feature^@
+    feature^!</code></pre>
+    <h2>Pathspec-Shorthand</h2>
+    <pre><code>git add :/
+    git checkout -- :/some-path
+    git diff -- '*.js'
+    git diff -- ':!vendor/'</code></pre>
+    <h2>Der <code>--</code>-Trenner</h2>
+    <pre><code>git checkout main
+    git checkout -- main
+    git diff master file
+    git diff master -- file</code></pre>
+    <h2>Nutzliche Ein-Zeichen-Flags</h2>
+    <pre><code>git commit -a
+    git commit -am "msg"
+    git pull -r
+    git push -u
+    git log -p
+    git log -S 'string'
+    git log -G 'regex'</code></pre>
+    <h2>Nutzliche Umgebungsvariablen</h2>
+    <pre><code>GIT_EDITOR=vim git commit
+    GIT_AUTHOR_DATE='2024-01-01T12:00:00' git commit -m "backdated"
+    GIT_PAGER=cat git log
+    GIT_TRACE=1 git fetch</code></pre>
+    <h2>Konfigurations-Shorthand</h2>
+    <pre><code>git config --global -e
+    git config -l
+    git config --get-regexp '^alias\\.'</code></pre>
+
+- source_title: "Git vs SVN: overview and philosophy"
+  title: "Git vs SVN: Uberblick und Philosophie"
+  langcode: de
+  verdict: "<p>Fur neue Projekte machen Git's verteiltes Modell und leichtgewichtiges Branching es zur Standardwahl. SVN bleibt valide, wo zentralisierte Kontrolle, feingranulare Zugriffskontrolle und Locking auf binaren Assets primare Bedurfnisse sind.</p>"
+  body: |
+    <h2>Zwei Philosophien</h2>
+    <p>Subversion (SVN), 2000 veroffentlicht, ist ein zentralisiertes Versionskontrollsystem. Git, 2005 veroffentlicht, ist verteilt.</p>
+    <h2>Mentale Modelle</h2>
+    <p>SVN's mentales Modell ist der Aktenschrank. Git's Modell ist eher wie E-Mail.</p>
+    <h2>Was SVN richtig gemacht hat</h2>
+    <ul>
+      <li>Einfach zu erklaren.</li>
+      <li>Feingranulare Zugriffskontrolle.</li>
+      <li>File-Locking fur unmergeable Binaries.</li>
+      <li>Lineare Revisionsnummern.</li>
+      <li>Stabil fur sehr grosse Repositories.</li>
+    </ul>
+    <h2>Was Git richtig gemacht hat</h2>
+    <ul>
+      <li>Gunstige, schnelle Branches und Merges.</li>
+      <li>Volle lokale Historie.</li>
+      <li>Verteiltes Modell.</li>
+      <li>SHA-basiertes Content-Addressing.</li>
+      <li>Riesiges Okosystem.</li>
+    </ul>
+    <h2>Tagliche Befehle im Vergleich</h2>
+    <pre><code># SVN
+    svn checkout https://svn.example.com/repo
+    svn update
+    svn add file.txt
+    svn commit -m "Add file"
+    svn log
+
+    # Git
+    git clone https://git.example.com/repo.git
+    git pull
+    git add file.txt
+    git commit -m "Add file"
+    git push
+    git log</code></pre>
+    <h2>Branching</h2>
+    <pre><code># SVN branch
+    svn copy https://svn.example.com/repo/trunk \
+             https://svn.example.com/repo/branches/feature -m "Branch"
+
+    # Git branch
+    git checkout -b feature</code></pre>
+    <h2>Warum Git Marktanteile gewann</h2>
+    <p>Drei Faktoren: GitHubs Netzwerkeffekte ab 2008, die Dominanz von Linux und die Wahl von Git, und der Aufstieg der Cloud.</p>
+    <h2>Wann SVN sinnvoll bleibt</h2>
+    <ul>
+      <li>Grosse Binar-Repositories.</li>
+      <li>Streng kontrollierte Umgebungen.</li>
+      <li>Etablierte Tooling-Pipelines.</li>
+    </ul>
+
+- source_title: "Git vs SVN: branching and merging"
+  title: "Git vs SVN: Branching und Merging"
+  langcode: de
+  verdict: "<p>Git's Branching ist strukturell gunstiger und Merges sind dank seiner DAG-basierten Historie handhabbarer. SVN's Branching hat sich verbessert, aber das zugrunde liegende Modell verursacht weiterhin Reibung. Fur Workflows, die haufiges Branching benotigen, gewinnt Git entscheidend.</p>"
+  body: |
+    <h2>Zwei Modelle, zwei Kosten</h2>
+    <p>SVN-Branches sind Verzeichniskopien im Repository. Git-Branches sind Zeiger.</p>
+    <h2>Branching-Befehle</h2>
+    <pre><code># SVN
+    svn copy ^/trunk ^/branches/feature -m "Create feature branch"
+    svn switch ^/branches/feature
+
+    # Git
+    git checkout -b feature
+    git switch feature</code></pre>
+    <h2>Merge-Tracking</h2>
+    <p>Bis SVN 1.5 war Merging manuell. SVN 1.5+ fugte <code>svn:mergeinfo</code> hinzu. Git verfolgt Merges nativ im Commit-Graph.</p>
+    <h2>Merging in der Praxis</h2>
+    <pre><code># SVN merge feature back to trunk
+    svn switch ^/trunk
+    svn merge ^/branches/feature
+    svn commit -m "Merge feature"
+
+    # Git merge feature back to main
+    git checkout main
+    git merge feature</code></pre>
+    <h2>Konfliktauflosung</h2>
+    <p>Beide Systeme verwenden Drei-Wege-Merge.</p>
+    <h2>Wiederholtes Mergen</h2>
+    <p>Git handhabt trivial "Ich habe letzte Woche von main gemerged, was hat sich geandert?".</p>
+    <h2>Cherry-picking</h2>
+    <pre><code># SVN
+    svn merge -c 12345 ^/trunk
+
+    # Git
+    git cherry-pick &lt;sha&gt;</code></pre>
+    <h2>Branch-Hygiene</h2>
+    <p>Da Git-Branches gunstig sind, verwenden Teams sie freigiebig.</p>
+    <h2>Sichtbarkeit</h2>
+    <p>Git's <code>git log --graph --all</code> rendert den gesamten Branch- und Merge-Graph in Sekunden.</p>
+    <h2>Wo SVN seinen Stand halt</h2>
+    <ul>
+      <li>"Trunk only" mit seltenen Release-Branches.</li>
+      <li>Per-Verzeichnis-Zugriffskontrolle.</li>
+    </ul>
+    <h2>Migrationsauswirkung</h2>
+    <p>Die grosste kulturelle Verschiebung beim Wechsel von SVN zu Git ist Branching.</p>
+
+- source_title: "Git vs SVN: performance and scalability"
+  title: "Git vs SVN: Performance und Skalierbarkeit"
+  langcode: de
+  verdict: "<p>Git gewinnt bei taglichen Operationen — log, diff, Branch-Switch, blame — weil sie lokal sind. SVN kann auf der reinen Repository-Grosse weiter skalieren, wenn der Inhalt grosstenteils binar ist. Fur typische Software-Teams fuhlt sich Git's Performance-Profil um Grossenordnungen schneller an.</p>"
+  body: |
+    <h2>Was wir mit Performance meinen</h2>
+    <p>"Performance" in der Versionskontrolle ist multidimensional.</p>
+    <h2>Clone versus Checkout</h2>
+    <pre><code># SVN: fast for first checkout, slow for history queries
+    svn checkout https://svn.example.com/repo trunk
+
+    # Git: slower clone, instant history thereafter
+    git clone https://git.example.com/repo.git</code></pre>
+    <h2>Lokale Operationen</h2>
+    <pre><code>git log --since='1 month'
+    svn log --limit 100</code></pre>
+    <h2>Branch-Operationen</h2>
+    <p>Git ist typischerweise 10-100x schneller fur Branch-Switching.</p>
+    <h2>Working-Tree-Grosse</h2>
+    <p>SVN kann Unterverzeichnisse gunstig auschecken.</p>
+    <h2>Repository-Grosse im Massstab</h2>
+    <p>Git speichert die volle Historie lokal. SVN serviert nur das, was der Client anfordert.</p>
+    <h2>Konkurrierende Writer</h2>
+    <p>SVN serialisiert Commits am Server.</p>
+    <h2>Netzwerk-Bandbreite</h2>
+    <p>Git pusht nur Deltas. SVN sendet die geanderten Dateien fur jeden Commit.</p>
+    <h2>Speicher auf dem Server</h2>
+    <p>Git's Pack-Files verwenden aggressive Delta-Kompression.</p>
+    <h2>Das tagliche Verdikt</h2>
+    <p>Fur ein typisches 100k-LOC-Projekt fuhlen sich Git-Operationen sofort an und SVN-Operationen trage.</p>
+    <h2>Wo SVN weiter skaliert</h2>
+    <ul>
+      <li>Massive Monorepos binaren Inhalts.</li>
+      <li>Read-heavy Zugriff.</li>
+      <li>Begrenzte Bandbreite zu Clients.</li>
+    </ul>
+
+- source_title: "Git vs SVN: offline work and distributed model"
+  title: "Git vs SVN: Offline-Arbeit und verteiltes Modell"
+  langcode: de
+  verdict: "<p>Git's verteiltes Modell ist ein definierender Vorteil — Offline-Commits, vollstandige Historie-Abfragen und Resilienz gegen Server-Ausfalle. SVN's zentralisiertes Modell hat architektonische Einfachheit zu seinen Gunsten, aber in der mobilen, remote-freundlichen Engineering-Kultur 2026 gewinnt Git's Offline-First-Design.</p>"
+  body: |
+    <h2>Der architektonische Unterschied</h2>
+    <p>Subversion ist zentralisiert; Git ist verteilt.</p>
+    <h2>Was "verteilt" ermoglicht</h2>
+    <ul>
+      <li><strong>Offline-Commits</strong>.</li>
+      <li><strong>Lokales Experimentieren</strong>.</li>
+      <li><strong>Disaster Recovery</strong>.</li>
+      <li><strong>Multi-Master-Workflows</strong>.</li>
+      <li><strong>Code von einem Vendor entkoppeln</strong>.</li>
+    </ul>
+    <h2>Was Zentralisierung ermoglicht</h2>
+    <ul>
+      <li><strong>Einzelne Quelle der Wahrheit</strong>.</li>
+      <li><strong>Per-Path-Zugriffskontrolle</strong>.</li>
+      <li><strong>Sequentielle Revisionsnummern</strong>.</li>
+      <li><strong>Locking</strong>.</li>
+    </ul>
+    <h2>Praktischer Vergleich</h2>
+    <pre><code># Offline in Git
+    git commit -m "WIP"
+    git log
+    git diff HEAD~5
+    git checkout -b experiment
+
+    # Same operations in SVN, offline:
+    svn commit       # error: cannot connect to server
+    svn log          # error: cannot connect to server
+    svn diff -r 100   # error: cannot connect to server</code></pre>
+    <h2>Mobiles und Remote-Arbeiten</h2>
+    <p>Die Dekade zwischen den Hauptzeiten von SVN und Git sah den Aufstieg von mobiler Entwicklung und globaler Remote-Arbeit.</p>
+    <h2>Disaster Recovery</h2>
+    <pre><code># Git: recover central repo from a clone
+    git clone --mirror /path/to/laptop/clone backup.git
+    cd backup.git
+    git remote add origin git@new-host:repo.git
+    git push --mirror origin
+
+    # SVN: requires server-side dumpfile
+    svnadmin dump /var/svn/repo &gt; repo.dump</code></pre>
+    <h2>Vorbehalte mit verteilt</h2>
+    <ul>
+      <li>Verteilt erzeugt eine Koordinationsfrage.</li>
+      <li>Forks konnen still divergieren.</li>
+      <li>Auditing und Zugriffskontrolle benotigen explizite Infrastruktur.</li>
+    </ul>
+    <h2>Hybrid</h2>
+    <p>Tools wie <code>git-svn</code> uberbrucken die beiden.</p>
+
+- source_title: "Git vs SVN: learning curve and migration"
+  title: "Git vs SVN: Lernkurve und Migration"
+  langcode: de
+  verdict: "<p>SVN ist fur jemanden, der mit beiden nicht vertraut ist, leichter zu lernen — das zentrale Server-Modell entspricht der Intuition der meisten Benutzer. Git belohnt Investitionen mit tieferen Fahigkeiten. Fur neue Teams rechtfertigt Git's Produktivitatsdecke den steileren Start; fur Migrationen plane zwei Wochen kulturellen Wandel.</p>"
+  body: |
+    <h2>Die erste Stunde</h2>
+    <p>SVN kann innerhalb einer Stunde produktiv genutzt werden. Git's erste Stunde ist schwieriger.</p>
+    <h2>Das Plateau</h2>
+    <p>SVN's Komplexitatsdecke ist niedrig. Git's ist hoch.</p>
+    <h2>Migration als kultureller Wandel</h2>
+    <p>Der schwerste Teil einer SVN-zu-Git-Migration ist nicht das Tooling — es ist das Verlernen von SVN's Commit-gleich-Veroffentlichen-Reflex.</p>
+    <h2>Konkrete Vergleiche</h2>
+    <pre><code># Daily SVN
+    svn update
+    svn diff
+    svn commit -m "msg"
+    svn log
+
+    # Daily Git
+    git pull
+    git diff
+    git add -p
+    git commit -m "msg"
+    git push
+    git log</code></pre>
+    <h2>Branch-Terminologie</h2>
+    <p>SVN-Branches sind Verzeichnisse. Git-Branches sind Zeiger.</p>
+    <h2>Dokumentation und Community</h2>
+    <p>Git's Dokumentation ist erschopfend.</p>
+    <h2>Tooling und IDEs</h2>
+    <p>Die meisten IDEs unterstutzen beide. Git-Integration ist jetzt reicher.</p>
+    <h2>Migrationsplan</h2>
+    <ol>
+      <li>Mit <code>git svn clone</code> konvertieren.</li>
+      <li>Den neuen Git-Host einrichten.</li>
+      <li>Das Team trainieren.</li>
+      <li>SVN read-only neben Git fur einen Sprint laufen lassen.</li>
+      <li>SVN ausser Betrieb nehmen.</li>
+    </ol>
+    <h2>Haufige Fallstricke</h2>
+    <ul>
+      <li>Git wie SVN behandeln.</li>
+      <li>Force-Push ohne Konsequenzen zu verstehen.</li>
+      <li>Verwirrung uber lokale vs. veroffentlichte Umschreibung.</li>
+      <li>Submodule als Ersatz fur SVN-Externals.</li>
+    </ul>
+    <h2>Tempo des Wandels</h2>
+    <p>Mit einfachen Workflows beginnen.</p>
+
+- source_title: "Git vs Mercurial: design philosophy"
+  title: "Git vs Mercurial: Design-Philosophie"
+  langcode: de
+  verdict: "<p>Sowohl Git als auch Mercurial losen das gleiche grundlegende Problem — verteilte Versionskontrolle mit sicherer Historie. Git umarmt Komplexitat, um Power-Usern scharfe Werkzeuge zu geben; Mercurial erzwingt Einfachheit, um alltagliche Workflows sicher zu halten. Heute wahlen die meisten Projekte Git aus Okosystemgrunden.</p>"
+  body: |
+    <h2>Gleiche Ara, andere Asthetik</h2>
+    <p>Git und Mercurial wurden beide im April 2005 veroffentlicht.</p>
+    <h2>Git's Haltung: Macht, Kanten, dem Benutzer vertrauen</h2>
+    <p>Git legt seine Internals offen.</p>
+    <h2>Mercurial's Haltung: Sicherheit, Konsistenz, Konservatismus</h2>
+    <p>Mercurial verbirgt Internals aggressiver.</p>
+    <h2>Das Branch-Modell</h2>
+    <pre><code># Mercurial: named branches are permanent
+    hg branch feature/login
+    hg commit -m "Start work"
+
+    # Mercurial: bookmarks are like Git branches
+    hg bookmark feature/login
+    hg commit -m "Start work"
+    hg bookmark -m feature/login feature-rename</code></pre>
+    <pre><code># Git: branches are mutable pointers
+    git checkout -b feature/login
+    git commit -m "Start work"
+    git branch -m feature-rename</code></pre>
+    <h2>Die CLI-Erfahrung</h2>
+    <p>Mercurials CLI ist einheitlicher.</p>
+    <h2>Geschwindigkeit</h2>
+    <p>Beide Systeme sind auf typischen Projekten schnell.</p>
+    <h2>Erweiterungen und Umfang</h2>
+    <p>Mercurials Erweiterungsmodell ist erstklassig.</p>
+    <h2>Die Frage der Historie-Umschreibung</h2>
+    <p>Beide konnen die Historie umschreiben. Mercurial verweigert standardmassig.</p>
+    <h2>Hash-Funktion</h2>
+    <p>Beide verwenden historisch SHA-1. Git migriert zu SHA-256.</p>
+    <h2>Reale Divergenz</h2>
+    <p>Facebook (jetzt Meta), einer der grossten Mercurial-Nutzer, hat es fur Monorepo-Skala geforkt und Sapling gebaut.</p>
+    <h2>Warum Okosystem mehr zahlt als technische Reinheit</h2>
+    <p>Mercurials CLI ist wohl lernbarer. Doch Git gewann Marktanteile, weil GitHub auf Git setzte.</p>
+    <h2>Was von Mercurial mitnehmen</h2>
+    <p>Sichere Defaults bevorzugen, gefahrliche Operationen hinter explizitem Opt-in gateway.</p>
+
+- source_title: "Git vs Mercurial: CLI and user experience"
+  title: "Git vs Mercurial: CLI und Benutzererfahrung"
+  langcode: de
+  verdict: "<p>Mercurials CLI gilt weithin als ausgereifter, mit klareren Befehlsnamen, besseren Defaults und sanfteren Fehlermeldungen. Git's CLI hat raue Kanten, die Jahrzehnte von Benutzern memorisiert haben. Fur neue Teams ist Mercurial freundlicher; aus Okosystemgrunden wahlen die meisten weiterhin Git.</p>"
+  body: |
+    <h2>Zwei Design-Stammbaume</h2>
+    <p>Git's CLI entstand organisch. Mercurials wurde top-down entworfen.</p>
+    <h2>Befehlskonsistenz</h2>
+    <p>Mercurial verwendet Verb-Substantiv konsistent.</p>
+    <h2>Hilfetext</h2>
+    <pre><code>hg help commit
+    git help commit</code></pre>
+    <h2>Fehlermeldungen</h2>
+    <p>Mercurial hat bekannt freundlichere Fehler.</p>
+    <h2>Sichere Defaults</h2>
+    <p>Mercurial-Befehle zerstoren selten Daten ohne explizite Erweiterung.</p>
+    <h2>Status-Ausgabe</h2>
+    <pre><code># Mercurial
+    hg status
+    M src/checkout.js
+    A src/payment.js
+    ? notes.txt
+
+    # Git
+    git status</code></pre>
+    <h2>Branching-Befehle</h2>
+    <pre><code># Mercurial
+    hg branch feature/login
+    hg commit -m "Start"
+
+    hg bookmark feature
+    hg commit -m "Start"
+
+    # Git
+    git checkout -b feature/login
+    git commit -m "Start"</code></pre>
+    <h2>Historie-Umschreibung</h2>
+    <p>Git: <code>git rebase -i</code>. Mercurial: <code>hg histedit</code>, erfordert Aktivierung.</p>
+    <h2>Hooks und Erweiterungen</h2>
+    <p>Mercurial-Erweiterungen plugen sich uber Python ein.</p>
+    <h2>Tab-Completion</h2>
+    <p>Beide liefern Completion fur grosse Shells.</p>
+    <h2>Die Kosten der Unvertrautheit</h2>
+    <p>Fur jemanden, der in Git fliessend ist, fuhlen sich Mercurials umbenannte Befehle restriktiv an.</p>
+    <h2>Moderne Verbesserungen</h2>
+    <p>Git hat die UX-Lucke verringert.</p>
+
+- source_title: "Git vs Mercurial: extensions and ecosystem"
+  title: "Git vs Mercurial: Erweiterungen und Okosystem"
+  langcode: de
+  verdict: "<p>Git's Okosystem ist uberwaltigend grosser — GitHub, GitLab, Bitbucket, IDE-Plugins, CI-Integrationen, Sicherheitstools, KI-Assistenten. Mercurials Erweiterungsarchitektur ist eleganter, aber der Netzwerkeffekt favorisiert Git entscheidend.</p>"
+  body: |
+    <h2>Zwei Okosystem-Formen</h2>
+    <p>Git's Okosystem ist riesig, marktgetrieben und ungleichmassig. Mercurials ist kleiner, deliberativ und koharenter.</p>
+    <h2>Hosting</h2>
+    <p>Git-Hosting ist uberall. Mercurial-Hosting ist drastisch geschrumpft.</p>
+    <h2>CI/CD-Integrationen</h2>
+    <p>Jeder grosse CI-Service unterstutzt Git nativ.</p>
+    <h2>IDE-Unterstutzung</h2>
+    <p>VS Code, JetBrains, Vim, Emacs, Sublime Text, Visual Studio — alle haben erstklassige Git-Integration.</p>
+    <h2>Erweiterungs-Architekturen</h2>
+    <p>Mercurial-Erweiterungen plugen sich in eine stabile Python-API. Notable Erweiterungen:</p>
+    <ul>
+      <li><code>histedit</code>.</li>
+      <li><code>mq</code>.</li>
+      <li><code>shelve</code>.</li>
+      <li><code>evolve</code>.</li>
+      <li><code>largefiles</code>.</li>
+    </ul>
+    <p>Notable Git-Tools:</p>
+    <ul>
+      <li><code>git-lfs</code>.</li>
+      <li><code>git filter-repo</code>.</li>
+      <li><code>gh</code>, <code>glab</code>, <code>gitlab-cli</code>.</li>
+      <li><code>delta</code>, <code>diff-so-fancy</code>.</li>
+      <li><code>tig</code>, <code>lazygit</code>.</li>
+    </ul>
+    <h2>Hooks</h2>
+    <pre><code># Git: shell scripts in .git/hooks/
+    cat &gt; .git/hooks/pre-commit &lt;&lt;'EOF'
+    #!/usr/bin/env bash
+    npm test
+    EOF
+    chmod +x .git/hooks/pre-commit
+
+    # Mercurial: configured in hgrc
+    [hooks]
+    pretxncommit.tests = npm test</code></pre>
+    <h2>Programmiersprachen-Bibliotheken</h2>
+    <p>Git hat Bibliotheken fur jede grosse Sprache: libgit2 (C), JGit (Java), gitoxide (Rust), pygit2 (Python).</p>
+    <h2>Dokumentation und Lernmaterialien</h2>
+    <p>Pro Git, GitHub-Dokumentation, Atlassian-Guides.</p>
+    <h2>Sicherheits-Tooling</h2>
+    <p>Geheimnis-Scanning (gitleaks, trufflehog), Supply-Chain-Attestation (cosign, in-toto) — alle zielen zuerst auf Git.</p>
+    <h2>KI- und Entwickler-Tooling</h2>
+    <p>Cursor, GitHub Copilot, Code-Review-Bots — alle integrieren mit Git-Semantik.</p>
+    <h2>Wo Mercurials Okosystem gewinnt</h2>
+    <ul>
+      <li>Heptapod bietet Mercurial-freundliches Hosting.</li>
+      <li>Mercurials <code>evolve</code>-Erweiterung bietet Historie-Mutations-Tracking.</li>
+      <li>Sapling von Meta ist heute der fortgeschrittenste Monorepo-Client.</li>
+    </ul>
+
+- source_title: "Git vs Mercurial: performance at scale"
+  title: "Git vs Mercurial: Performance im Massstab"
+  langcode: de
+  verdict: "<p>Bei gewohnlichen Repository-Grossen performen Git und Mercurial vergleichbar. Bei extremem Massstab kampfen beide, und dediziertes Tooling (GVFS/Scalar von Microsoft, Sapling von Meta) wird notig. Auf Team und Tooling wahlen, nicht auf rohe Performance.</p>"
+  body: |
+    <h2>Performance-Vokabular</h2>
+    <p>"Performance im Massstab" kann viele Dinge bedeuten.</p>
+    <h2>Klon und Fetch</h2>
+    <p>Git's Pack-Files verwenden aggressive Delta-Kompression. Mercurial verwendet Bundle-Files mit ahnlicher Kompression.</p>
+    <h2>Lokale Operationen</h2>
+    <pre><code># Benchmark: log on a million-commit repo
+    time git log --oneline | wc -l
+    time hg log --template '{rev}\n' | wc -l</code></pre>
+    <h2>Working-Tree-Grosse</h2>
+    <p>Beide Systeme machen Datei-Tree-Updates durch Tree-Walking.</p>
+    <h2>Speicherverbrauch</h2>
+    <p>Mercurials Python-Runtime erzwingt einen hoheren Speicher-Floor.</p>
+    <h2>Repository-Storage</h2>
+    <p>Beide verwenden content-addressed Storage mit Delta-Kompression.</p>
+    <h2>Parallele Operationen</h2>
+    <p>Git's Index verwendet File-Locks.</p>
+    <h2>Server-seitige Skalierung</h2>
+    <p>Git-Server (GitHub, GitLab, Gitea) hosten routinemassig Repositories mit Hunderttausenden von Mitwirkenden.</p>
+    <h2>Monorepo-Massstab</h2>
+    <p>Microsoft (Windows in Git via VFS for Git / Scalar) und Meta (Sapling) standen vor demselben Problem.</p>
+    <pre><code># Git with sparse checkout and partial clone
+    git clone --filter=blob:none --sparse https://example.com/monorepo.git
+    cd monorepo
+    git sparse-checkout init --cone
+    git sparse-checkout set apps/myapp shared/utils
+
+    # Mercurial with sparse and narrow
+    hg clone --narrow --include 'apps/myapp' --include 'shared/utils' \
+      https://example.com/monorepo</code></pre>
+    <h2>Sapling und Scalar</h2>
+    <p>Sapling von Meta ist im Wesentlichen "Mercurial neu gedacht fur Monorepos".</p>
+    <h2>Die pragmatische Schlussfolgerung</h2>
+    <p>Bei gewohnlichem Massstab ist Performance kein entscheidender Faktor.</p>
+
+- source_title: "Git vs Mercurial: why Git won market share"
+  title: "Git vs Mercurial: warum Git Marktanteile gewann"
+  langcode: de
+  verdict: "<p>Git's Marktdominanz verdankt mehr Okosystemdynamiken — GitHub, dem Linux-Kernel, Netzwerkeffekten — als inharenter technischer Uberlegenheit. Mercurial bleibt ein gutes System, und seine UX-Lektionen haben Git im Laufe der Zeit beeinflusst. Die Geschichte ist eine nutzliche Fallstudie daruber, wie Community und Tooling, nicht nur Engineering-Qualitat, Ergebnisse entscheiden.</p>"
+  body: |
+    <h2>Der 2005-Wendepunkt</h2>
+    <p>BitKeeper war der VCS des Linux-Kernels bis April 2005. Linus Torvalds schrieb Git in 10 Tagen.</p>
+    <h2>Der Linux-Faktor</h2>
+    <p>Der Linux-Kernel ist das grosste, einflussreichste Open-Source-Projekt der Geschichte.</p>
+    <h2>Der GitHub-Faktor</h2>
+    <p>GitHub startete im April 2008. Bis 2010 war GitHub der OSS-Hub.</p>
+    <h2>Netzwerkeffekte</h2>
+    <p>Die Kosten des VCS-Wechsels skalieren mit Teamgrosse und Okosystem-Investment.</p>
+    <h2>Wo Mercurial-Befurworter bleiben</h2>
+    <ul>
+      <li>Mozilla (Firefox, Thunderbird) hat Mercurial uber ein Jahrzehnt verwendet; 2023 zu Git migriert.</li>
+      <li>Meta (Facebook) hat Mercurial extensiv verwendet.</li>
+    </ul>
+    <h2>Was Git richtig gemacht hat</h2>
+    <ul>
+      <li><strong>Geschwindigkeit</strong>.</li>
+      <li><strong>Flexibilitat</strong>.</li>
+      <li><strong>Der Linux-Kernel als offentlicher Beweis</strong>.</li>
+      <li><strong>Schnelle Iteration</strong>.</li>
+    </ul>
+    <h2>Was Mercurial richtig gemacht hat</h2>
+    <ul>
+      <li><strong>UX</strong>.</li>
+      <li><strong>Erweiterungsmodell</strong>.</li>
+      <li><strong>Dokumentation</strong>.</li>
+      <li><strong>Konservative Defaults</strong>.</li>
+    </ul>
+    <h2>Die Lektionen fur Tool-Design</h2>
+    <ul>
+      <li>Technischer Verdienst allein entscheidet nicht uber Adoption.</li>
+      <li>Okosystem und Host-Integration zahlen mehr als CLI-Eleganz.</li>
+      <li>Ein Befurworter im Zentrum einer einflussreichen Community schlagt Jahre der Verfeinerung.</li>
+      <li>UX-Verbesserungen folgen Marktdominanz.</li>
+    </ul>
+    <h2>Migrationspfade heute</h2>
+    <pre><code># Mercurial to Git
+    git clone https://github.com/frej/fast-export.git
+    cd source-hg-repo
+    git init ../target-git-repo
+    cd ../target-git-repo
+    ~/fast-export/hg-fast-export.sh -r ../source-hg-repo
+
+    # Cross-mirror via hg-git
+    hg clone https://example.com/repo
+    cd repo
+    hg push git+ssh://github.com/user/repo.git</code></pre>
+
+- source_title: "Git vs Perforce: target scale and use cases"
+  title: "Git vs Perforce: Zielmassstab und Anwendungsfalle"
+  langcode: de
+  verdict: "<p>Git und Perforce sind fur verschiedene Welten konzipiert. Git brilliert in der verteilten Entwicklung von hauptsachlich textuellem Code mit haufigem Branching. Perforce brilliert in der zentralisierten, locking-freundlichen Verwaltung massiver Mixed-Content-Projekte — Spiele, Filme, Hardware. Viele grosse Studios betreiben beide.</p>"
+  body: |
+    <h2>Verschiedene Probleme, verschiedene Losungen</h2>
+    <p>Perforce wurde 1995 veroffentlicht. Es zielt auf eine bestimmte Art von Problem.</p>
+    <h2>Architektur</h2>
+    <p>Perforce ist zentralisiert, wie SVN, aber fur Massstab weit jenseits von SVNs typischer Verwendung konstruiert.</p>
+    <h2>Was Perforce brillant macht</h2>
+    <ul>
+      <li><strong>File-Locking</strong>.</li>
+      <li><strong>Streams</strong>.</li>
+      <li><strong>Per-Path-Sicherheit</strong>.</li>
+      <li><strong>Massive Repos</strong>.</li>
+      <li><strong>Atomare Submits uber Dateien</strong>.</li>
+      <li><strong>Reife Integration</strong>.</li>
+    </ul>
+    <h2>Was Git brillant macht</h2>
+    <ul>
+      <li>Gunstiges Branching und Merging.</li>
+      <li>Verteilte Historie.</li>
+      <li>Massives Open-Source-Okosystem.</li>
+      <li>Integration mit modernen Code-Review- und PR-getriebenen Workflows.</li>
+      <li>Kosten.</li>
+    </ul>
+    <h2>Tagliche Befehle</h2>
+    <pre><code># Perforce
+    p4 sync
+    p4 edit file.txt
+    p4 submit -d "Edit"
+    p4 changes
+
+    # Git
+    git pull
+    git add file.txt
+    git commit -m "Edit"
+    git push
+    git log</code></pre>
+    <h2>Branching</h2>
+    <pre><code>p4 stream -P main //my-depot/release
+    p4 stream -P main //my-depot/feature-x</code></pre>
+    <h2>Locking</h2>
+    <pre><code>p4 edit -t binary+l character.fbx</code></pre>
+    <h2>Anwendungsfalle, in denen Perforce gewinnt</h2>
+    <ul>
+      <li>Spieleentwicklung mit Terabyte an Kunst-Assets.</li>
+      <li>VFX-Studios.</li>
+      <li>Hardware-Design.</li>
+      <li>Regulierte Industrien.</li>
+    </ul>
+    <h2>Anwendungsfalle, in denen Git gewinnt</h2>
+    <ul>
+      <li>Open-Source-Software.</li>
+      <li>Web- und mobile App-Entwicklung.</li>
+      <li>Bibliotheks- und SDK-Entwicklung.</li>
+    </ul>
+    <h2>Hybride Ansatze</h2>
+    <p>Viele grosse Spielestudios betreiben Git fur Engine-Code und Perforce fur Inhalte.</p>
+    <h2>Kosten</h2>
+    <p>Perforce-/Helix-Core-Lizenzen sind pro Benutzer und nicht gunstig.</p>
+
+- source_title: "Git vs Perforce: locking model and binary handling"
+  title: "Git vs Perforce: Locking-Modell und Binar-Handhabung"
+  langcode: de
+  verdict: "<p>Fur binar-lastige Workflows, in denen exklusive Locks zahlen, ist Perforce zweckmassig konzipiert und zuverlassig. Git LFS fugt Locking und Storage grosser Dateien hinzu, aber die Erfahrung bleibt zweitklassig. Studios mit ernsthaftem Binarinhalt wahlen typischerweise immer noch Perforce fur diesen Teil der Arbeit.</p>"
+  body: |
+    <h2>Warum Locking zahlt</h2>
+    <p>Einige Dateien konnen nicht gemerged werden. Ein 3D-Modell in <code>.fbx</code>, eine Photoshop-Datei in <code>.psd</code>.</p>
+    <h2>Perforces Locking-Modell</h2>
+    <pre><code>p4 edit character.fbx
+    p4 submit -d "Update rig"
+
+    p4 lock character.fbx
+    p4 unlock character.fbx</code></pre>
+    <h2>Git's natives Modell</h2>
+    <p>Git hat kein Konzept exklusiver Locks.</p>
+    <h2>Git LFS File-Locking</h2>
+    <pre><code>git lfs lock character.fbx
+    git lfs unlock character.fbx
+    git lfs locks</code></pre>
+    <pre><code># .gitattributes
+    *.fbx filter=lfs diff=lfs merge=lfs -text lockable
+    *.psd filter=lfs diff=lfs merge=lfs -text lockable</code></pre>
+    <h2>Erfahrungen vergleichen</h2>
+    <p>Perforce-Locking ist integriert, schnell und direkt an die Datei gebunden.</p>
+    <ul>
+      <li>Ein LFS-Server, der die Locking-API unterstutzt.</li>
+      <li><code>.gitattributes</code>-Eintrage.</li>
+      <li>Disziplin von <code>git lfs lock</code>.</li>
+      <li>Ein Push, der den Lock aufhebt.</li>
+    </ul>
+    <h2>Binar-Storage</h2>
+    <p>Perforce speichert Binaries effizient.</p>
+    <h2>Diff und Merge</h2>
+    <p>Beide Systeme konnen benutzerdefinierte Diff- und Merge-Tools integrieren.</p>
+    <h2>Working-Tree-Grosse</h2>
+    <p>Perforces <code>p4 sync</code> kann nur spezifizierte Verzeichnisse abrufen.</p>
+    <h2>Auditierbarkeit</h2>
+    <p>Perforces zentralisiertes Modell gibt klare Audit-Logs.</p>
+    <h2>Das hybride Muster</h2>
+    <p>Viele Studios verwenden Git fur Code und Perforce fur Inhalte.</p>
+    <h2>Wann jedes verwenden</h2>
+    <ul>
+      <li>Binar-lastig, Locking-essenziell → Perforce.</li>
+      <li>Code-lastig, verteilt, PR-getrieben → Git.</li>
+      <li>Gemischt → beide betreiben.</li>
+    </ul>
+
+- source_title: "Git vs Perforce: enterprise features and cost"
+  title: "Git vs Perforce: Enterprise-Features und Kosten"
+  langcode: de
+  verdict: "<p>Perforce verlangt Lizenzen pro Benutzer und bietet Enterprise-Features (ACLs pro Pfad, Streams, professionellen Support, monumentalen Massstab) sofort einsatzbereit. Git ist kostenlos und allgegenwartig; Perforces Enterprise-Feature-Set zu erreichen erfordert das Zusammenstellen von Tools. Fur die meisten Teams reichen Git plus eine Hosting-Stufe; fur Studios und regulierte Industrien ist Perforces gebundeltes Angebot oft die Kosten wert.</p>"
+  body: |
+    <h2>Die Kostenfrage</h2>
+    <p>Perforce / Helix Core ist kommerzielle Software. Preise variieren je nach Plan, aber landen typischerweise bei 25-50 USD pro Benutzer pro Monat.</p>
+    <h2>Perforces Enterprise-Feature-Set</h2>
+    <ul>
+      <li><strong>Per-Path-Zugriffskontrolle</strong>.</li>
+      <li><strong>Streams</strong>.</li>
+      <li><strong>File-Locking</strong>.</li>
+      <li><strong>Helix Swarm</strong>.</li>
+      <li><strong>Helix Sync / P4VS</strong>.</li>
+      <li><strong>Professioneller Support</strong>.</li>
+      <li><strong>Massiver Massstab</strong>.</li>
+      <li><strong>Replikation und Proxies</strong>.</li>
+    </ul>
+    <h2>Git's Enterprise-Feature-Set</h2>
+    <ul>
+      <li><strong>GitHub / GitLab / Bitbucket Enterprise</strong>.</li>
+      <li><strong>Branch-Schutz</strong>.</li>
+      <li><strong>Code Owners</strong>.</li>
+      <li><strong>Riesiges Okosystem</strong>.</li>
+      <li><strong>Kostenlose Stufe</strong>.</li>
+      <li><strong>Self-Hosting-Optionen</strong>.</li>
+    </ul>
+    <h2>Tiefe der Zugriffskontrolle</h2>
+    <p>Perforce: ACLs pro Pfad. Git's Modell ist pro Repository.</p>
+    <p>Workarounds in Git:</p>
+    <ul>
+      <li>Geheimen Inhalt in separate Repos teilen.</li>
+      <li>Submodule verwenden.</li>
+      <li>Server-seitige Hooks verwenden.</li>
+    </ul>
+    <h2>Audit-Trail</h2>
+    <p>Perforce zeichnet jede Operation server-seitig auf.</p>
+    <h2>Code-Review-Integration</h2>
+    <p>Perforce liefert Swarm. Git verlasst sich auf den Host.</p>
+    <h2>Build-Farm-Integration</h2>
+    <p>Perforce brilliert hier.</p>
+    <h2>Self-Hosting</h2>
+    <p>Perforce kann self-hosted werden. GitLab CE, Gitea, Forgejo und sourcehut bieten self-hosted Git.</p>
+    <h2>Gesamtkosten</h2>
+    <p>Perforce: Lizenz + Admin-Zeit + Integrationszeit. Git: Hosting-Gebuhren + Tooling-Lizenzen + Integrationszeit.</p>
+    <h2>Der ehrliche Vergleich</h2>
+    <p>Preis ist im Massstab selten der entscheidende Faktor.</p>
+
+- source_title: "Git vs Perforce: when Perforce is the right choice"
+  title: "Git vs Perforce: wann Perforce die richtige Wahl ist"
+  langcode: de
+  verdict: "<p>Perforce ist die richtige Wahl, wenn sich Ihre Arbeit auf grosse, nicht-mergeable Assets konzentriert, wenn feingranulare Zugriffskontrolle eine harte Anforderung ist, oder wenn die Tooling-Pipeline Ihrer Branche besser mit Perforce integriert. Wahlen Sie Perforce nicht reflexartig; wahlen Sie es deliberativ, wenn seine nativen Starken sich mit Ihrem taglichen Workflow ausrichten.</p>"
+  body: |
+    <h2>Der ehrliche Fall fur Perforce</h2>
+    <p>Dieser Artikel ist ein Gegengewicht. Die meisten modernen Engineering-Blogs nehmen an, dass Git die Antwort ist.</p>
+    <h2>Signal 1: binar-lastige Workloads</h2>
+    <p>Wenn Ihre taglichen Commits FBX-Modelle, PSD-Dateien, Multi-Gigabyte-WAVs, Raw-Camera-Footage, CAD-Assemblies oder kompilierte Engine-Artefakte enthalten, passt Perforces Design zur Arbeit.</p>
+    <h2>Signal 2: Locking ist nicht optional</h2>
+    <p>Wenn Ihr Team jemals den Tagesarbeit eines Kunstlers verloren hat, weil zwei Personen dieselbe Szene bearbeitet haben.</p>
+    <h2>Signal 3: Per-Path-Zugriffskontrolle</h2>
+    <p>Wenn Zugriffskontrollfragen wie "dieser Auftragnehmer kann den Menu-Code sehen, aber nicht die Engine-Internals".</p>
+    <h2>Signal 4: massives Monorepo ohne saubere Aufteilungen</h2>
+    <p>Spielestudios, VFX-Hauser, Hardware-Designfirmen haben oft ein Repository in Terabytes, das nicht aufgeteilt werden kann.</p>
+    <h2>Signal 5: integriertes DCC-Tooling</h2>
+    <p>Wenn Ihr Team Maya, Unreal Engine, Unity, Substance Painter, Houdini verwendet, integrieren alle out-of-the-box mit Perforce.</p>
+    <h2>Signal 6: Build-Farm-Integration</h2>
+    <p>Massive verteilte Build-Systeme (incredibuild, etc.) haben oft Jahrzehnte von Perforce-Integration.</p>
+    <h2>Signal 7: regulatorische und Audit-Bedurfnisse</h2>
+    <p>Einige Industrien (Verteidigung, Automobil, Medizin) erfordern vollstandige Audit-Trails.</p>
+    <h2>Wenn Perforce die falsche Wahl ist</h2>
+    <ul>
+      <li>Workload ist hauptsachlich Textcode, der sauber merged.</li>
+      <li>Team ist verteilt, oft offline.</li>
+      <li>Tooling erwartet Git.</li>
+      <li>Bootstrap, wo Lizenzkosten sinnvoll sind.</li>
+      <li>Open-Source-Beitrage nutzen.</li>
+    </ul>
+    <h2>Das hybride Playbook</h2>
+    <ul>
+      <li>Perforce fur Kunst-Assets, Animationen, Audio, Video, grosse Binaries.</li>
+      <li>Git (oft GitHub Enterprise) fur Engine-Code, Gameplay-Skripte, Tooling.</li>
+      <li>Build-Pipelines pullen aus beiden.</li>
+      <li>Code-Review uber PRs; Art-Review uber Helix Swarm.</li>
+    </ul>
+    <pre><code>#!/usr/bin/env bash
+    git fetch &amp;&amp; git checkout main
+    p4 sync //assets/release/...
+    ./build.sh</code></pre>
+    <h2>Migrationsuberlegungen</h2>
+    <p>Perforce-zu-Git-Migrationen sind ublich, beinhalten aber Kompromisse. <code>git p4</code> uberbruckt die Systeme.</p>
+
+- source_title: "Choosing a version control system: a decision guide"
+  title: "Ein Versionskontrollsystem wahlen: ein Entscheidungsleitfaden"
+  langcode: de
+  verdict: "<p>Fur die meisten Software-Teams im Jahr 2026 ist Git der richtige Default — Okosystem, Tooling und Entwicklervertrauten sind entscheidend. SVN, Mercurial und Perforce bleiben in spezifischen Nischen valide: SVN fur streng kontrollierte zentralisierte Umgebungen, Mercurial fur Teams, die UX-Konsistenz schatzen, Perforce fur binar-lastige Spiele- und Medienentwicklung. Deliberativ wahlen, nicht reflexartig.</p>"
+  body: |
+    <h2>Die Entscheidung framen</h2>
+    <p>"Welches VCS sollten wir verwenden?" hat selten eine richtige Antwort.</p>
+    <h2>Workload-Beschrankungen</h2>
+    <ul>
+      <li><strong>Hauptsachlich Textcode, haufiges Branching</strong> → Git.</li>
+      <li><strong>Hauptsachlich binarer Inhalt, exklusive Locks essenziell</strong> → Perforce.</li>
+      <li><strong>Gemischt, mit sauber trennbarem Code und Assets</strong> → beide betreiben.</li>
+      <li><strong>Zentralisierte Kontrolle mit einfachem Branching</strong> → SVN bleibt akzeptabel.</li>
+    </ul>
+    <h2>Team-Beschrankungen</h2>
+    <ul>
+      <li><strong>Verteilt, oft offline</strong> → verteiltes VCS (Git, Mercurial).</li>
+      <li><strong>Single-Site, immer online</strong> → beide Modelle funktionieren.</li>
+      <li><strong>Gemischte Ingenieure und Nicht-Ingenieure</strong> → freundlichere UX zahlt.</li>
+      <li><strong>Open-Source-Mitwirkende</strong> → Git, ohne Frage.</li>
+    </ul>
+    <h2>Okosystem-Beschrankungen</h2>
+    <ul>
+      <li><strong>CI/CD-Modernitat</strong> → Git uberwaltigend.</li>
+      <li><strong>Spielengine / DCC-Tooling</strong> → oft Perforce, mit Git fur Code.</li>
+      <li><strong>Existierende Infrastruktur</strong> → Kontinuitat hat realen Wert.</li>
+    </ul>
+    <h2>Compliance-Beschrankungen</h2>
+    <ul>
+      <li><strong>Per-Path-Zugriffskontrolle</strong> → Perforce oder SVN.</li>
+      <li><strong>Server-seitiges Audit von Lese-Operationen</strong> → zentralisierte Systeme.</li>
+      <li><strong>Signierte Commits und Supply-Chain-Attestation</strong> → Git mit sigstore-Klasse-Tooling.</li>
+    </ul>
+    <h2>Kostenbeschrankungen</h2>
+    <ul>
+      <li><strong>Bootstrap ohne Budget</strong> → Git auf GitHub Free Tier, GitLab CE oder Gitea.</li>
+      <li><strong>Finanzierte Enterprise mit Binar-Bedurfnissen</strong> → Perforce rechtfertigt sich.</li>
+      <li><strong>Mittelgrosses SaaS-Team</strong> → bezahlte GitHub- oder GitLab-Stufe.</li>
+    </ul>
+    <h2>Entscheidungsbaum</h2>
+    <pre><code>1. Is most of your content unmergeable binary?
+       Yes → Perforce. Stop.
+       No → continue.
+
+    2. Do you need per-path access control?
+       Yes → SVN, Perforce, or Git with significant tooling investment.
+       No → continue.
+
+    3. Do contributors work offline or distributed?
+       Yes → Git (or Mercurial). Continue.
+       No → either model is fine.
+
+    4. Do you need GitHub-style ecosystem?
+       Yes → Git. Stop.
+       No → consider Mercurial for UX, SVN for centralisation.
+
+    5. Default → Git.</code></pre>
+    <h2>Beispielszenarien</h2>
+    <ul>
+      <li><strong>Web-SaaS-Startup, 5 Ingenieure</strong> → Git auf GitHub oder GitLab.</li>
+      <li><strong>Spielestudio, 200 Personen</strong> → Perforce fur Assets, Git fur Code.</li>
+      <li><strong>Regierungsagentur</strong> → selbst-gehosteter GitLab oder Perforce.</li>
+      <li><strong>Open-Source-Bibliothek</strong> → Git auf GitHub.</li>
+      <li><strong>Internes Unternehmenstooling</strong> → Git ist immer noch die Antwort.</li>
+      <li><strong>Hardware-Designfirma</strong> → Perforce; moglicherweise Git fur eingebettete Firmware.</li>
+    </ul>
+    <h2>Migrationspfade</h2>
+    <pre><code># SVN to Git
+    git svn clone --stdlayout --authors-file=authors.txt &lt;url&gt;
+
+    # Mercurial to Git
+    ~/fast-export/hg-fast-export.sh -r &lt;hg-repo&gt;
+
+    # Perforce to Git
+    git p4 clone //depot/main@all my-git-repo</code></pre>
+    <h2>Analyse-Paralyse vermeiden</h2>
+    <p>Wenn Sie sich nicht entscheiden konnen, ist die Antwort Git.</p>
+    <h2>Die Wahl uberprufen</h2>
+    <p>Alle zwei Jahre neu bewerten.</p>
+
+- source_title: "Your first pull request: end to end"
+  title: "Ihre erste Pull Request: Ende-zu-Ende"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Am Ende dieses Tutorials werden Sie ein Open-Source-Repository geforkt, eine kleine Anderung auf einem Feature-Branch gemacht, eine Pull Request geoffnet, auf Feedback reagiert und Ihre Arbeit gemerged sehen haben.</p>
+    <h2>Voraussetzungen</h2>
+    <ul>
+      <li>Git installiert.</li>
+      <li>Ein GitHub-Konto.</li>
+      <li>Einen SSH-Schlussel oder Token konfiguriert.</li>
+      <li>Ein Ziel-Repository.</li>
+    </ul>
+    <h2>Schritt 1: das Repository forken</h2>
+    <pre><code>git clone git@github.com:yourname/project.git
+    cd project</code></pre>
+    <h2>Schritt 2: upstream als Remote hinzufugen</h2>
+    <pre><code>git remote add upstream git@github.com:original-owner/project.git
+    git remote -v</code></pre>
+    <h2>Schritt 3: von upstream synchronisieren</h2>
+    <pre><code>git fetch upstream
+    git checkout main
+    git merge upstream/main --ff-only
+    git push origin main</code></pre>
+    <h2>Schritt 4: einen Feature-Branch erstellen</h2>
+    <pre><code>git checkout -b fix/typo-in-readme</code></pre>
+    <h2>Schritt 5: die Anderung machen</h2>
+    <pre><code>git status
+    git diff
+    git add README.md
+    git commit -m "Fix typo in installation section"</code></pre>
+    <h2>Schritt 6: Ihren Branch pushen</h2>
+    <pre><code>git push -u origin fix/typo-in-readme</code></pre>
+    <h2>Schritt 7: die Pull Request offnen</h2>
+    <pre><code>gh pr create --title "Fix typo in installation section" \
+      --body "Fixes a small typo where 'isntall' should read 'install'."</code></pre>
+    <h2>Schritt 8: auf Feedback reagieren</h2>
+    <pre><code>git add CONTRIBUTING.md
+    git commit -m "Fix same typo in CONTRIBUTING"
+    git push</code></pre>
+    <h2>Schritt 9: CI-Fehler handhaben</h2>
+    <p>Wenn CI rot ist, klicken Sie zur fehlgeschlagenen Run.</p>
+    <h2>Schritt 10: mergen</h2>
+    <pre><code>gh pr merge --squash --delete-branch
+    git checkout main
+    git fetch upstream
+    git merge upstream/main --ff-only
+    git push origin main
+    git branch -d fix/typo-in-readme</code></pre>
+    <h2>Haufige Anfanger-Fallstricke</h2>
+    <ul>
+      <li>Direkt an <code>main</code> arbeiten.</li>
+      <li>Nicht-bezogene Anderungen in einer PR bundeln.</li>
+      <li>Pushen ohne lokal zu testen.</li>
+      <li>Force-Push zu <code>main</code>.</li>
+    </ul>
+
+- source_title: "Resolving merge conflicts step by step"
+  title: "Merge-Konflikte Schritt fur Schritt losen"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden absichtlich einen Merge-Konflikt erstellen, durch die Auflosung gehen und die Tools und Muster lernen, die Konflikte unbeangstigend machen.</p>
+    <h2>Schritt 1: einen Sandbox einrichten</h2>
+    <pre><code>mkdir conflict-tutorial &amp;&amp; cd conflict-tutorial
+    git init
+    cat &gt; recipe.txt &lt;&lt;'EOF'
+    Tomato Sauce Recipe
+    Ingredients:
+    - 1 onion, chopped
+    - 2 cloves garlic
+    - 1 can tomatoes
+    EOF
+    git add recipe.txt
+    git commit -m "Initial recipe"</code></pre>
+    <h2>Schritt 2: zwei divergierende Branches erstellen</h2>
+    <pre><code>git checkout -b add-basil
+    sed -i.bak 's/2 cloves garlic/2 cloves garlic\n- handful of basil/' recipe.txt &amp;&amp; rm recipe.txt.bak
+    git commit -am "Add basil"
+
+    git checkout -b add-oregano main
+    sed -i.bak 's/2 cloves garlic/2 cloves garlic\n- pinch of oregano/' recipe.txt &amp;&amp; rm recipe.txt.bak
+    git commit -am "Add oregano"</code></pre>
+    <h2>Schritt 3: den Konflikt auslosen</h2>
+    <pre><code>git checkout main
+    git merge add-basil
+    git merge add-oregano</code></pre>
+    <pre><code>CONFLICT (content): Merge conflict in recipe.txt
+    Automatic merge failed; fix conflicts and then commit the result.</code></pre>
+    <h2>Schritt 4: die Konflikt-Marker lesen</h2>
+    <pre><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+    - handful of basil
+    =======
+    - pinch of oregano
+    &gt;&gt;&gt;&gt;&gt;&gt;&gt; add-oregano</code></pre>
+    <h2>Schritt 5: auflosen</h2>
+    <pre><code>- 2 cloves garlic
+    - handful of basil
+    - pinch of oregano
+    - 1 can tomatoes</code></pre>
+    <h2>Schritt 6: stagen und Merge abschliessen</h2>
+    <pre><code>git add recipe.txt
+    git status
+    git merge --continue
+    git commit</code></pre>
+    <h2>Tools, die helfen</h2>
+    <pre><code>git mergetool
+    git config --global merge.tool vimdiff</code></pre>
+    <h2>Abbrechen</h2>
+    <pre><code>git merge --abort</code></pre>
+    <h2>Haufige Muster</h2>
+    <ul>
+      <li>Eine Seite ganz nehmen.</li>
+      <li>Beide nehmen.</li>
+      <li>Den Merge neu starten.</li>
+    </ul>
+    <h2>Vor dem Auflosen inspizieren</h2>
+    <pre><code>git diff
+    git log --merge -p &lt;file&gt;
+    git show :1:&lt;file&gt;
+    git show :2:&lt;file&gt;
+    git show :3:&lt;file&gt;</code></pre>
+    <h2>Rerere fur wiederholte Konflikte</h2>
+    <pre><code>git config --global rerere.enabled true</code></pre>
+
+- source_title: "Rebasing your branch onto main"
+  title: "Ihren Branch auf main rebasen"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden einen Feature-Branch nehmen, der hinter <code>main</code> zuruckgefallen ist, ihn sauber auf die neue Spitze rebasen, eventuelle Konflikte losen und den rebasten Branch zuruckpushen.</p>
+    <h2>Warum Rebase, nicht Merge?</h2>
+    <p>Wenn Sie <code>main</code> in Ihren Feature-Branch mergen, entstehen zusatzliche Merge-Commits.</p>
+    <h2>Schritt 1: einen Sandbox einrichten</h2>
+    <pre><code>mkdir rebase-tutorial &amp;&amp; cd rebase-tutorial
+    git init
+    echo "v1" &gt; app.txt
+    git add app.txt &amp;&amp; git commit -m "Initial"
+
+    git checkout -b feature/login
+    echo "login" &gt; login.txt
+    git add login.txt &amp;&amp; git commit -m "Add login"
+
+    git checkout main
+    echo "v2" &gt; app.txt
+    git commit -am "Update app to v2"</code></pre>
+    <h2>Schritt 2: rebasen</h2>
+    <pre><code>git checkout feature/login
+    git rebase main</code></pre>
+    <h2>Schritt 3: Konflikte handhaben</h2>
+    <pre><code>git status
+    git add app.txt
+    git rebase --continue</code></pre>
+    <pre><code>git rebase --abort</code></pre>
+    <h2>Schritt 4: verifizieren</h2>
+    <pre><code>git log --oneline --graph</code></pre>
+    <h2>Schritt 5: Push</h2>
+    <pre><code>git push
+    git push --force-with-lease</code></pre>
+    <h2>Haufige Varianten</h2>
+    <pre><code>git fetch origin
+    git rebase origin/main
+
+    git config --global pull.rebase true
+
+    git checkout main &amp;&amp; git pull
+    git checkout feature/login &amp;&amp; git rebase main</code></pre>
+    <h2>Interaktiver Rebase</h2>
+    <pre><code>git rebase -i main</code></pre>
+    <h2>Fallstricke und Regeln</h2>
+    <ul>
+      <li><strong>Niemals geteilte Branches rebasen.</strong></li>
+      <li><strong><code>--force-with-lease</code> verwenden.</strong></li>
+      <li><strong>Konflikte in der Reihenfolge losen.</strong></li>
+      <li><strong>Wenn Konflikte uberwaltigend sind, abbrechen.</strong></li>
+    </ul>
+    <h2>Wiederherstellung</h2>
+    <pre><code>git reflog
+    git reset --hard ORIG_HEAD</code></pre>
+
+- source_title: "Setting up a shared repository for a team"
+  title: "Ein gemeinsames Repository fur ein Team einrichten"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden ein gemeinsames Git-Repository mit Branch-Schutz, einem sauberen Default-Workflow, Hooks fur Code-Qualitat und CI-Integration konfigurieren.</p>
+    <h2>Schritt 1: das Repository erstellen</h2>
+    <pre><code>git clone git@github.com:myorg/project.git
+    cd project</code></pre>
+    <h2>Schritt 2: Default-Branch konfigurieren</h2>
+    <pre><code>git config init.defaultBranch main</code></pre>
+    <h2>Schritt 3: Branch-Schutz</h2>
+    <ul>
+      <li>Eine Pull Request vor Merge erfordern.</li>
+      <li>Mindestens einen genehmigenden Review erfordern.</li>
+      <li>Status-Checks erfordern.</li>
+      <li>Lineare Historie erfordern.</li>
+      <li>Force-Pushes verbieten.</li>
+      <li>Direktes Loschen verbieten.</li>
+    </ul>
+    <h2>Schritt 4: <code>.gitignore</code> und <code>.gitattributes</code></h2>
+    <pre><code># .gitignore
+    node_modules/
+    dist/
+    .env*
+    !.env.example
+    .DS_Store
+    *.swp
+
+    # .gitattributes
+    * text=auto eol=lf
+    *.png binary
+    *.jpg binary
+    *.pdf binary</code></pre>
+    <h2>Schritt 5: CODEOWNERS</h2>
+    <pre><code># .github/CODEOWNERS
+    *               @myorg/maintainers
+    /docs/          @myorg/docs-team
+    /infra/         @myorg/devops</code></pre>
+    <h2>Schritt 6: PR- und Issue-Templates</h2>
+    <pre><code># .github/PULL_REQUEST_TEMPLATE.md
+    ## Summary
+
+    ## Test plan
+    - [ ]
+
+    ## Screenshots / videos (if UI)
+
+    ## Linked issues</code></pre>
+    <h2>Schritt 7: Pre-Commit-Hooks</h2>
+    <pre><code>npm install --save-dev husky lint-staged
+    npx husky init
+
+    # .husky/pre-commit
+    npx lint-staged
+
+    # package.json
+    "lint-staged": {
+      "*.{js,ts}": ["eslint --fix", "prettier --write"]
+    }</code></pre>
+    <h2>Schritt 8: CI-Konfiguration</h2>
+    <pre><code># .github/workflows/ci.yml
+    name: CI
+    on:
+      push:
+        branches: [main]
+      pull_request:
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-node@v4
+            with:
+              node-version: '20'
+          - run: npm ci
+          - run: npm run lint
+          - run: npm test</code></pre>
+    <h2>Schritt 9: Geheimnis-Scanning</h2>
+    <pre><code>- uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}</code></pre>
+    <h2>Schritt 10: Beitragsdokumentation</h2>
+    <p>Branch-Naming, Commit-Message-Format und PR-Prozess dokumentieren.</p>
+    <h2>Schritt 11: das Team einladen</h2>
+    <p>Teammitglieder mit angemessenen Berechtigungen hinzufugen.</p>
+    <h2>Schritt 12: erste PR</h2>
+    <p>Eine kleine PR erstellen, um den Prozess zu durchlaufen.</p>
+    <h2>Wartung</h2>
+    <ul>
+      <li>Branch-Schutz-Regeln vierteljahrlich uberprufen.</li>
+      <li>CODEOWNERS bei Teamanderungen aktualisieren.</li>
+      <li>Periodisch gemergten Branches prunen.</li>
+    </ul>
+
+- source_title: "Using git bisect to find a bug automatically"
+  title: "git bisect verwenden, um einen Bug automatisch zu finden"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden <code>git bisect</code> mit einem automatisierten Test-Skript verwenden, um den genauen Commit zu identifizieren, der eine Regression eingefuhrt hat.</p>
+    <h2>Einen Sandbox mit einem geplanten Bug einrichten</h2>
+    <pre><code>mkdir bisect-tutorial &amp;&amp; cd bisect-tutorial
+    git init
+
+    cat &gt; calc.js &lt;&lt;'EOF'
+    function add(a, b) { return a + b; }
+    module.exports = { add };
+    EOF
+    git add calc.js &amp;&amp; git commit -m "Initial calc"
+
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+      echo "// touched: $i" &gt;&gt; calc.js
+      git commit -am "Tweak $i"
+    done
+
+    git checkout HEAD~5
+    sed -i.bak 's/a + b/a - b/' calc.js &amp;&amp; rm calc.js.bak
+    git commit -am "Refactor add (oops)"
+    git checkout main
+    git rebase HEAD~5</code></pre>
+    <h2>Einen Reproducer schreiben</h2>
+    <pre><code>cat &gt; test.js &lt;&lt;'EOF'
+    const { add } = require('./calc');
+    if (add(2, 3) !== 5) {
+      console.error('FAIL: add(2,3) should be 5');
+      process.exit(1);
+    }
+    EOF</code></pre>
+    <h2>Manuelles Bisect</h2>
+    <pre><code>git bisect start
+    git bisect bad HEAD
+    git bisect good HEAD~12
+    node test.js
+    git bisect good
+    git bisect bad</code></pre>
+    <h2>Reset</h2>
+    <pre><code>git bisect reset</code></pre>
+    <h2>Automatisiertes Bisect</h2>
+    <pre><code>git bisect start HEAD HEAD~12
+    git bisect run node test.js</code></pre>
+    <h2>Untestbare Commits uberspringen</h2>
+    <pre><code>git bisect skip</code></pre>
+    <h2>Begriffe anpassen</h2>
+    <pre><code>git bisect start --term-old=fast --term-new=slow
+    git bisect slow HEAD
+    git bisect fast v2.4.0</code></pre>
+    <h2>Was Bisect funktionsfahig macht</h2>
+    <ul>
+      <li>Atomare Commits.</li>
+      <li>Reproduzierbare Tests.</li>
+      <li>Deterministischer Bug.</li>
+    </ul>
+    <h2>Reales Beispiel</h2>
+    <pre><code>git bisect start HEAD v3.0.0
+    git bisect run ./scripts/reproduce-issue.sh</code></pre>
+
+- source_title: "Cleaning up a messy commit history before merging"
+  title: "Eine unordentliche Commit-Historie vor dem Merge aufraumen"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden einen Feature-Branch mit unordentlichen Work-in-Progress-Commits nehmen und ihn in eine saubere atomare Serie umschreiben.</p>
+    <h2>Einen Sandbox einrichten</h2>
+    <pre><code>mkdir cleanup-tutorial &amp;&amp; cd cleanup-tutorial
+    git init
+    echo "main" &gt; app.txt &amp;&amp; git add . &amp;&amp; git commit -m "Initial"
+    git checkout -b feature
+    echo "1" &gt; one.txt &amp;&amp; git add . &amp;&amp; git commit -m "wip"
+    echo "2" &gt; two.txt &amp;&amp; git add . &amp;&amp; git commit -m "more wip"
+    echo "3" &gt; three.txt &amp;&amp; git add . &amp;&amp; git commit -m "fix"
+    echo "fixed" &gt;&gt; one.txt &amp;&amp; git commit -am "actually fix one"
+    echo "lint" &gt;&gt; three.txt &amp;&amp; git commit -am "lint"</code></pre>
+    <h2>Schritt 1: uberprufen</h2>
+    <pre><code>git log --oneline</code></pre>
+    <h2>Schritt 2: interaktiver Rebase</h2>
+    <pre><code>git rebase -i main</code></pre>
+    <pre><code>pick aaa1111 wip
+    pick bbb2222 more wip
+    pick ccc3333 fix
+    pick ddd4444 actually fix one
+    pick eee5555 lint</code></pre>
+    <h2>Schritt 3: das Skript umschreiben</h2>
+    <pre><code>pick aaa1111 wip
+    fixup ddd4444 actually fix one
+    pick bbb2222 more wip
+    pick ccc3333 fix
+    fixup eee5555 lint</code></pre>
+    <h2>Schritt 4: jeden Commit umbenennen</h2>
+    <pre><code>git rebase -i main</code></pre>
+    <pre><code>reword AAA111 wip
+    reword BBB222 more wip
+    reword CCC333 fix</code></pre>
+    <h2>Schritt 5: verifizieren</h2>
+    <pre><code>git log --oneline
+    git log</code></pre>
+    <h2>Schritt 6: Push</h2>
+    <pre><code>git push --force-with-lease</code></pre>
+    <h2>Der Fixup-Workflow wahrend der Entwicklung</h2>
+    <pre><code>git commit --fixup &lt;target-sha&gt;
+    git rebase -i --autosquash main</code></pre>
+    <h2>Einen zu grossen Commit aufteilen</h2>
+    <pre><code>git rebase -i main
+    git reset HEAD^
+    git add -p
+    git commit -m "First atomic piece"
+    git add -p
+    git commit -m "Second atomic piece"
+    git rebase --continue</code></pre>
+    <h2>Fallstricke</h2>
+    <ul>
+      <li>Niemals einen Branch rebasen, auf dem andere Arbeit basieren.</li>
+      <li>Immer <code>--force-with-lease</code>.</li>
+      <li>Nach dem Rebase testen.</li>
+    </ul>
+    <h2>Wiederherstellung</h2>
+    <pre><code>git reflog
+    git reset --hard ORIG_HEAD</code></pre>
+
+- source_title: "Git hooks for code quality: a practical setup"
+  title: "Git-Hooks fur Code-Qualitat: ein praktisches Setup"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden Pre-Commit- und Pre-Push-Hooks konfigurieren, die Code linten, formatieren, type-checken und testen.</p>
+    <h2>Ein Framework wahlen</h2>
+    <ul>
+      <li><strong>Husky + lint-staged</strong> fur Node-Projekte.</li>
+      <li><strong>pre-commit Framework</strong> fur Python.</li>
+      <li><strong>core.hooksPath</strong> fur custom Shell-Skripte.</li>
+    </ul>
+    <h2>Pfad 1: Husky fur Node</h2>
+    <pre><code>npm install --save-dev husky lint-staged eslint prettier
+    npx husky init</code></pre>
+    <pre><code># .husky/pre-commit
+    #!/usr/bin/env sh
+    . "$(dirname "$0")/_/husky.sh"
+    npx lint-staged
+
+    # package.json
+    "lint-staged": {
+      "*.{js,ts,tsx,jsx}": [
+        "eslint --fix",
+        "prettier --write"
+      ],
+      "*.{json,md,yml,yaml}": ["prettier --write"]
+    }</code></pre>
+    <pre><code># .husky/pre-push
+    #!/usr/bin/env sh
+    . "$(dirname "$0")/_/husky.sh"
+    npm run typecheck
+    npm test</code></pre>
+    <h2>Pfad 2: pre-commit Framework</h2>
+    <pre><code>pip install pre-commit</code></pre>
+    <pre><code># .pre-commit-config.yaml
+    repos:
+      - repo: https://github.com/pre-commit/pre-commit-hooks
+        rev: v4.6.0
+        hooks:
+          - id: trailing-whitespace
+          - id: end-of-file-fixer
+          - id: check-yaml
+          - id: check-merge-conflict
+      - repo: https://github.com/astral-sh/ruff-pre-commit
+        rev: v0.5.0
+        hooks:
+          - id: ruff
+            args: [--fix]
+          - id: ruff-format
+      - repo: https://github.com/gitleaks/gitleaks
+        rev: v8.18.0
+        hooks:
+          - id: gitleaks</code></pre>
+    <pre><code>pre-commit install
+    pre-commit install --hook-type pre-push
+    pre-commit run --all-files</code></pre>
+    <h2>Pfad 3: geteilte Shell-Hooks</h2>
+    <pre><code>mkdir .githooks
+    cat &gt; .githooks/pre-commit &lt;&lt;'EOF'
+    #!/usr/bin/env bash
+    set -e
+    files=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\\.(js|ts)$' || true)
+    [ -z "$files" ] &amp;&amp; exit 0
+    echo "$files" | xargs npx eslint --max-warnings=0
+    echo "$files" | xargs npx prettier --check
+    EOF
+    chmod +x .githooks/pre-commit
+
+    git config core.hooksPath .githooks</code></pre>
+    <h2>Best Practices</h2>
+    <ul>
+      <li>Nur auf geanderten Dateien ausfuhren.</li>
+      <li>Auf &lt;5 Sekunden Pre-Commit zielen.</li>
+      <li>Hooks fixbar machen.</li>
+      <li>In CI spiegeln.</li>
+    </ul>
+    <h2>Mehr Checks hinzufugen</h2>
+    <ul>
+      <li>Type-Check.</li>
+      <li>Geheimnis-Erkennung.</li>
+      <li>Commit-Message-Format.</li>
+      <li>Branch-Name-Format.</li>
+    </ul>
+    <h2>Commit-Message-Linting</h2>
+    <pre><code>npm install --save-dev @commitlint/cli @commitlint/config-conventional
+
+    # commitlint.config.js
+    module.exports = { extends: ['@commitlint/config-conventional'] };
+
+    # .husky/commit-msg
+    #!/usr/bin/env sh
+    . "$(dirname "$0")/_/husky.sh"
+    npx --no -- commitlint --edit $1</code></pre>
+
+- source_title: "Migrating an SVN repository to Git"
+  title: "Ein SVN-Repository zu Git migrieren"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden ein SVN-Repository zu Git konvertieren, Autoren, Daten, Branches und Tags bewahren und das Ergebnis zu einem Git-Host pushen.</p>
+    <h2>Schritt 1: vorbereiten</h2>
+    <pre><code>svn info https://svn.example.com/repo
+    svn ls https://svn.example.com/repo</code></pre>
+    <h2>Schritt 2: Autoren-Mapping erstellen</h2>
+    <pre><code>svn log --xml https://svn.example.com/repo \
+      | grep -E '&lt;author&gt;' \
+      | sort -u \
+      | sed -E 's/.*&gt;(.+)&lt;.*/\1 = \1 &lt;\1@example.com&gt;/' \
+      &gt; authors.txt</code></pre>
+    <pre><code>jdoe = Jane Doe &lt;jane@example.com&gt;
+    bsmith = Bob Smith &lt;bob@example.com&gt;</code></pre>
+    <h2>Schritt 3: mit <code>git svn</code> konvertieren</h2>
+    <pre><code>git svn clone \
+        --stdlayout \
+        --authors-file=authors.txt \
+        https://svn.example.com/repo \
+        repo.git
+    cd repo.git</code></pre>
+    <h2>Schritt 4: SVN-Tags zu Git-Tags konvertieren</h2>
+    <pre><code>git for-each-ref refs/remotes/origin/tags --format='%(refname:short)' \
+      | while read ref; do
+        tag="${ref#origin/tags/}"
+        git tag "$tag" "$ref"
+        git update-ref -d "refs/remotes/$ref"
+      done</code></pre>
+    <h2>Schritt 5: SVN-Branches zu Git-Branches konvertieren</h2>
+    <pre><code>git for-each-ref refs/remotes/origin --format='%(refname:short)' \
+      | grep -v '^origin/tags' \
+      | while read ref; do
+        branch="${ref#origin/}"
+        if [ "$branch" != "trunk" ]; then
+          git branch "$branch" "$ref"
+        fi
+        git update-ref -d "refs/remotes/$ref"
+      done</code></pre>
+    <h2>Schritt 6: trunk zu main umbenennen</h2>
+    <pre><code>git branch -m trunk main</code></pre>
+    <h2>Schritt 7: verifizieren</h2>
+    <pre><code>git log --oneline | wc -l
+    svn log -q https://svn.example.com/repo | grep -c '^r'
+    git tag | wc -l
+    git branch | wc -l</code></pre>
+    <h2>Schritt 8: zu einem Git-Host pushen</h2>
+    <pre><code>git remote add origin git@github.com:myorg/repo.git
+    git push -u origin --all
+    git push origin --tags</code></pre>
+    <h2>Schritt 9: Externals handhaben</h2>
+    <ul>
+      <li>Externen Code vendoren.</li>
+      <li>Submodule.</li>
+      <li>Package Manager.</li>
+    </ul>
+    <h2>Schritt 10: grosse oder binare Inhalte handhaben</h2>
+    <pre><code>git filter-repo --strip-blobs-bigger-than 50M
+    git lfs migrate import --include="*.psd,*.zip" --everything</code></pre>
+    <h2>Schritt 11: den Cutover kommunizieren</h2>
+    <ul>
+      <li>Cutover-Datum ankundigen.</li>
+      <li>SVN read-only machen.</li>
+      <li>Klon-Anweisungen geben.</li>
+      <li>Training planen.</li>
+    </ul>
+    <h2>Haufige Fallstricke</h2>
+    <ul>
+      <li>Unvollstandige Authors-Datei.</li>
+      <li>Nicht-Standard-Layout.</li>
+      <li>SVN-Merge-Tracking.</li>
+      <li>Leere Verzeichnisse.</li>
+    </ul>
+
+- source_title: "Setting up Git LFS for a media-heavy project"
+  title: "Git LFS fur ein medien-lastiges Projekt einrichten"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden Git LFS installieren und fur ein Projekt mit Bildern, Video und Design-Dateien konfigurieren.</p>
+    <h2>Schritt 1: Git LFS installieren</h2>
+    <pre><code># macOS
+    brew install git-lfs
+
+    # Debian/Ubuntu
+    sudo apt install git-lfs
+
+    git lfs version</code></pre>
+    <pre><code>git lfs install</code></pre>
+    <h2>Schritt 2: in das Repo gehen</h2>
+    <pre><code>cd path/to/repo
+    git lfs install --local</code></pre>
+    <h2>Schritt 3: Dateitypen tracken</h2>
+    <pre><code>git lfs track "*.psd"
+    git lfs track "*.ai"
+    git lfs track "*.sketch"
+    git lfs track "*.mp4"
+    git lfs track "*.mov"
+    git lfs track "*.wav"
+    git lfs track "assets/raw/**"</code></pre>
+    <h2>Schritt 4: <code>.gitattributes</code> committen</h2>
+    <pre><code>git add .gitattributes
+    git commit -m "Configure LFS tracking for media files"</code></pre>
+    <h2>Schritt 5: neue Mediendateien hinzufugen</h2>
+    <pre><code>cp ~/Downloads/logo.psd assets/
+    git add assets/logo.psd
+    git commit -m "Add logo PSD"
+    git push</code></pre>
+    <pre><code>git lfs ls-files</code></pre>
+    <h2>Schritt 6: bestehende Binaries migrieren</h2>
+    <pre><code>git lfs migrate import --include="*.psd,*.mp4,*.mov,*.wav" --everything</code></pre>
+    <pre><code>git push --force --all
+    git push --force --tags</code></pre>
+    <h2>Schritt 7: binare Dateien sperren (optional)</h2>
+    <pre><code># .gitattributes
+    *.psd filter=lfs diff=lfs merge=lfs -text lockable
+    *.ai filter=lfs diff=lfs merge=lfs -text lockable</code></pre>
+    <pre><code>git lfs lock assets/logo.psd
+    git push
+    git lfs unlock assets/logo.psd
+    git lfs locks</code></pre>
+    <h2>Schritt 8: auf einem frischen Klon verifizieren</h2>
+    <pre><code>cd /tmp
+    git clone &lt;url&gt; test-clone
+    cd test-clone
+    ls -la assets/logo.psd</code></pre>
+    <pre><code>git cat-file -p HEAD:assets/logo.psd</code></pre>
+    <h2>Schritt 9: Quoten handhaben</h2>
+    <ul>
+      <li>Gitea oder Forgejo - LFS integriert.</li>
+      <li>GitLab - LFS nativ.</li>
+      <li>Bare LFS-Server.</li>
+    </ul>
+    <h2>Schritt 10: Pruning</h2>
+    <pre><code>git lfs prune
+    git lfs prune --dry-run</code></pre>
+    <h2>Performance-Tipps</h2>
+    <ul>
+      <li>LFS-Smudge auf initialem Klon uberspringen.</li>
+      <li><code>git lfs fetch --recent</code> in CI verwenden.</li>
+      <li>CI-Caches konfigurieren.</li>
+    </ul>
+    <h2>Fehlerbehebung</h2>
+    <ul>
+      <li>Pointer-Datei im Working Tree: LFS nicht installiert.</li>
+      <li>Push abgelehnt: Quote uberschritten.</li>
+    </ul>
+
+- source_title: "Keeping your fork in sync with upstream"
+  title: "Ihren Fork mit upstream synchron halten"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden einen Fork eines Open-Source-Repositorys mit seinem upstream auf dem neuesten Stand halten.</p>
+    <h2>Schritt 1: Remote-Setup bestatigen</h2>
+    <pre><code>git remote -v</code></pre>
+    <pre><code>git remote add upstream git@github.com:original-owner/project.git
+    git remote -v</code></pre>
+    <h2>Schritt 2: upstream fetchen</h2>
+    <pre><code>git fetch upstream</code></pre>
+    <h2>Schritt 3: lokales main aktualisieren</h2>
+    <pre><code>git checkout main
+    git merge upstream/main --ff-only</code></pre>
+    <h2>Schritt 4: zum Fork pushen</h2>
+    <pre><code>git push origin main</code></pre>
+    <h2>Schritt 5: Feature-Branches rebasen</h2>
+    <pre><code>git checkout feature/login
+    git rebase main
+    git push --force-with-lease</code></pre>
+    <h2>Schritt 6: Pull-Verhalten konfigurieren</h2>
+    <pre><code>git config pull.rebase true
+    git config pull.ff only</code></pre>
+    <h2>Optional: GitHubs "Sync fork"-Button</h2>
+    <p>GitHubs UI bietet einen "Sync fork"-Button.</p>
+    <h2>Optional: <code>gh repo sync</code></h2>
+    <pre><code>gh repo sync yourname/project --branch main</code></pre>
+    <pre><code># .github/workflows/sync.yml
+    name: Sync upstream
+    on:
+      schedule:
+        - cron: '0 6 * * 1'
+      workflow_dispatch:
+    jobs:
+      sync:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: tgymnich/fork-sync@v1.8
+            with:
+              owner: original-owner
+              base: main
+              head: main</code></pre>
+    <h2>Optional: Tags pullen</h2>
+    <pre><code>git fetch upstream --tags
+    git push origin --tags</code></pre>
+    <h2>Haufige Szenarien</h2>
+    <h3>Lokales main ist divergiert</h3>
+    <pre><code>git reset --hard upstream/main
+    git push --force-with-lease origin main</code></pre>
+    <h3>Upstream hat den Default-Branch umbenannt</h3>
+    <pre><code>git fetch upstream
+    git branch -m master main
+    git branch --set-upstream-to=upstream/main main
+    git push origin :master main</code></pre>
+    <h3>Vergessen, monatelang zu synchronisieren</h3>
+    <pre><code>git fetch upstream
+    git checkout main
+    git reset --hard upstream/main
+    git push --force-with-lease origin main
+
+    git checkout feature/whatever
+    git rebase main</code></pre>
+    <h2>Best-Practice-Kadenz</h2>
+    <ul>
+      <li><strong>Taglich</strong> fur aktive Mitwirkende.</li>
+      <li><strong>Wochentlich</strong> fur gelegentliche Mitwirkende.</li>
+      <li><strong>Vor jeder PR</strong> als Minimum.</li>
+    </ul>
+
+- source_title: "Cherry-picking specific changes from another branch"
+  title: "Cherry-pick spezifischer Anderungen aus einem anderen Branch"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden einen einzelnen Commit, einen Bereich und einen Merge von einem Branch zu einem anderen cherry-picken.</p>
+    <h2>Einen Sandbox einrichten</h2>
+    <pre><code>mkdir cherry-tutorial &amp;&amp; cd cherry-tutorial
+    git init
+    echo "v1" &gt; app.txt
+    git add . &amp;&amp; git commit -m "Initial"
+
+    git checkout -b release/1.0
+    echo "release" &gt; release.txt
+    git add . &amp;&amp; git commit -m "Release notes"
+
+    git checkout main
+    git checkout -b feature
+    echo "fix" &gt; fix.txt
+    git add . &amp;&amp; git commit -m "Critical bug fix"
+    echo "feat" &gt; feat.txt
+    git add . &amp;&amp; git commit -m "New feature work"</code></pre>
+    <h2>Schritt 1: den Commit identifizieren</h2>
+    <pre><code>git log feature --oneline</code></pre>
+    <h2>Schritt 2: Cherry-pick</h2>
+    <pre><code>git checkout release/1.0
+    git cherry-pick def5678</code></pre>
+    <h2>Schritt 3: die Lineage aufzeichnen</h2>
+    <pre><code>git cherry-pick -x def5678</code></pre>
+    <h2>Schritt 4: einen Bereich cherry-picken</h2>
+    <pre><code>git cherry-pick def5678..abc1234
+    git cherry-pick def5678^..abc1234</code></pre>
+    <h2>Schritt 5: Konflikte handhaben</h2>
+    <pre><code>git cherry-pick &lt;sha&gt;
+    git add &lt;file&gt;
+    git cherry-pick --continue
+    git cherry-pick --abort</code></pre>
+    <h2>Schritt 6: leere Cherry-picks</h2>
+    <pre><code>git cherry-pick --allow-empty &lt;sha&gt;
+    git cherry-pick --skip</code></pre>
+    <h2>Schritt 7: einen Merge cherry-picken</h2>
+    <pre><code>git cherry-pick -m 1 &lt;merge-sha&gt;</code></pre>
+    <h2>Schritt 8: verifizieren</h2>
+    <pre><code>git log --oneline
+    git diff main release/1.0</code></pre>
+    <h2>Haufige Workflows</h2>
+    <h3>Hotfix-Backport</h3>
+    <pre><code>git checkout release/1.4
+    git cherry-pick -x &lt;hotfix-sha&gt;
+    git push</code></pre>
+    <h3>Rettung von einem Branch, den Sie wegwerfen</h3>
+    <pre><code>git checkout main
+    git cherry-pick &lt;valuable-sha&gt;
+    git branch -D experimental</code></pre>
+    <h3>Fixes zwischen Wartungslinien weiterleiten</h3>
+    <pre><code>for branch in release/1.4 release/1.5 main; do
+      git checkout $branch
+      git cherry-pick -x &lt;fix-sha&gt;
+    done</code></pre>
+    <h2>Fallstricke</h2>
+    <ul>
+      <li>Doppelte Commits.</li>
+      <li>Verlorener Kontext.</li>
+      <li>Wiederholtes Cherry-picking.</li>
+    </ul>
+
+- source_title: "Rolling back a bad release"
+  title: "Ein schlechtes Release zurucksetzen"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden ein problematisches Release zurucksetzen — zuerst durch Reverten der Commits, dann durch Re-Tagging einer fruheren Version.</p>
+    <h2>Zwei Szenarien</h2>
+    <ul>
+      <li><strong>Deployment-Rollback</strong>.</li>
+      <li><strong>Code-Rollback</strong>.</li>
+    </ul>
+    <h2>Szenario 1: einen alteren Tag deployen</h2>
+    <pre><code>git tag --sort=-v:refname | head</code></pre>
+    <pre><code>gh workflow run deploy.yml -f tag=v2.3.5</code></pre>
+    <h2>Szenario 2: die Commits reverten</h2>
+    <pre><code>git checkout main
+    git pull
+    git revert &lt;bad-sha&gt;
+    git push</code></pre>
+    <h2>Einen Merge-Commit reverten</h2>
+    <pre><code>git log --merges -10
+    git revert -m 1 &lt;merge-sha&gt;
+    git push</code></pre>
+    <h2>Einen Bereich reverten</h2>
+    <pre><code>git revert &lt;older-sha&gt;..&lt;newer-sha&gt;</code></pre>
+    <h2>Den Rollback taggen</h2>
+    <pre><code>git tag -a v2.4.1 -m "Roll back v2.4.0 due to checkout regression"
+    git push origin v2.4.1</code></pre>
+    <h2>Das Forward-Fix-Antimuster</h2>
+    <p>Verlockend aber oft falsch: "wir werden es einfach forward fixen".</p>
+    <h2>Datenbank-Migrationen und Rollback</h2>
+    <ul>
+      <li>Migrationen sollten additiv sein.</li>
+      <li>Breaking Changes in Migrationen vermeiden.</li>
+      <li>Einen getesteten Down-Migrationspfad haben.</li>
+      <li>Feature-Flags verwenden.</li>
+    </ul>
+    <h2>Mit dem Team koordinieren</h2>
+    <ul>
+      <li>Den Rollback im selben Kanal wie Releases ankundigen.</li>
+      <li>Den SHA dokumentieren, der rolled back wird.</li>
+      <li>Ein Tracking-Issue offnen.</li>
+      <li>Ein Post-Mortem planen.</li>
+    </ul>
+    <h2>Rollbacks vermeiden</h2>
+    <ul>
+      <li><strong>Canary-Releases</strong>.</li>
+      <li><strong>Feature-Flags</strong>.</li>
+      <li><strong>Pre-Release-Validierung</strong>.</li>
+      <li><strong>Kleinere Releases</strong>.</li>
+    </ul>
+    <h2>Nach dem Fix erneut anwenden</h2>
+    <pre><code>git revert &lt;revert-sha&gt;
+    git commit -am "Fix the issue that caused the original revert"</code></pre>
+
+- source_title: "Setting up commit signing with SSH keys"
+  title: "Commit-Signierung mit SSH-Schlusseln einrichten"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden Git so konfigurieren, dass Commits und Tags mit Ihrem bestehenden SSH-Schlussel signiert werden.</p>
+    <h2>Warum SSH-Signierung</h2>
+    <p>SSH-Signierung wurde in Git 2.34 eingefuhrt.</p>
+    <h2>Schritt 1: Git-Version bestatigen</h2>
+    <pre><code>git --version</code></pre>
+    <h2>Schritt 2: bestatigen, dass ein SSH-Schlussel existiert</h2>
+    <pre><code>ls -la ~/.ssh/id_ed25519*
+    ssh-keygen -t ed25519 -C "you@example.com"</code></pre>
+    <h2>Schritt 3: Git fur SSH-Signierung konfigurieren</h2>
+    <pre><code>git config --global gpg.format ssh
+    git config --global user.signingkey ~/.ssh/id_ed25519.pub
+    git config --global commit.gpgsign true
+    git config --global tag.gpgsign true</code></pre>
+    <h2>Schritt 4: testen</h2>
+    <pre><code>cd /tmp/sign-test
+    git init
+    echo "test" &gt; file.txt
+    git add . &amp;&amp; git commit -m "Test signed commit"
+    git log --show-signature -1</code></pre>
+    <h2>Schritt 5: allowed signers konfigurieren</h2>
+    <pre><code>mkdir -p ~/.config/git
+    echo "you@example.com $(cat ~/.ssh/id_ed25519.pub)" \
+      &gt;&gt; ~/.config/git/allowed_signers
+    git config --global gpg.ssh.allowedSignersFile ~/.config/git/allowed_signers</code></pre>
+    <h2>Schritt 6: einen Commit verifizieren</h2>
+    <pre><code>git verify-commit HEAD
+    git log --show-signature
+    git verify-tag v1.0.0</code></pre>
+    <h2>Schritt 7: Schlussel zum Git-Host hochladen</h2>
+    <p>Fur GitHub: Settings → SSH and GPG keys → New SSH key.</p>
+    <h2>Schritt 8: altere Commits signieren</h2>
+    <pre><code>git commit --amend --no-edit -S
+    git rebase -i &lt;base&gt; --exec 'git commit --amend --no-edit -S'</code></pre>
+    <h2>Schritt 9: signierte Commits durchsetzen</h2>
+    <pre><code>gh api -X PUT repos/owner/repo/branches/main/protection \
+      -F required_signatures.enabled=true</code></pre>
+    <h2>Schritt 10: mehrere Maschinen handhaben</h2>
+    <ul>
+      <li>Per-Maschinen-Schlussel, alle zum Host hochgeladen.</li>
+      <li>Ein Master-Schlussel kopiert.</li>
+      <li>Hardware-Schlussel (YubiKey).</li>
+    </ul>
+    <h2>Hardware-gestutzte Signierung</h2>
+    <pre><code>ssh-keygen -t ed25519-sk -O resident -C "you@example.com"</code></pre>
+    <h2>Schritt 11: Tags signieren</h2>
+    <pre><code>git tag -s v1.0.0 -m "Release 1.0.0"
+    git tag -v v1.0.0</code></pre>
+
+- source_title: "Using worktrees to work on multiple branches simultaneously"
+  title: "Worktrees verwenden, um an mehreren Branches gleichzeitig zu arbeiten"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden einen Git-Worktree erstellen, um einen zweiten Branch in einem anderen Verzeichnis auszuchecken.</p>
+    <h2>Das Problem</h2>
+    <p>Sie sind tief in <code>feature/checkout</code>, als ein Teamkollege Sie wegen eines dringenden Hotfixes pingt.</p>
+    <h2>Schritt 1: das bestehende Repo untersuchen</h2>
+    <pre><code>cd ~/work/myproject
+    git worktree list</code></pre>
+    <h2>Schritt 2: einen Worktree fur den Hotfix hinzufugen</h2>
+    <pre><code>git worktree add ../myproject-hotfix main</code></pre>
+    <h2>Schritt 3: einen neuen Branch im Worktree erstellen</h2>
+    <pre><code>cd ../myproject-hotfix
+    git checkout -b hotfix/cve-2026-1234</code></pre>
+    <pre><code>git worktree add -b hotfix/cve-2026-1234 ../myproject-hotfix main</code></pre>
+    <h2>Schritt 4: parallel arbeiten</h2>
+    <pre><code>cd ../myproject-hotfix
+    git push -u origin hotfix/cve-2026-1234
+
+    cd ../myproject</code></pre>
+    <h2>Schritt 5: auflisten und inspizieren</h2>
+    <pre><code>git worktree list</code></pre>
+    <h2>Schritt 6: aufraumen</h2>
+    <pre><code>git worktree remove ../myproject-hotfix
+    git worktree prune</code></pre>
+    <h2>Wie es funktioniert</h2>
+    <p>Das <code>.git</code> des Original-Repos ist der einzige Object-Store.</p>
+    <h2>Anwendungsfalle</h2>
+    <h3>Eine Kollegen-PR reviewen</h3>
+    <pre><code>gh pr checkout 123 --branch pr-123
+    git worktree add ../pr-123 pr-123
+    cd ../pr-123
+    npm install
+    npm test</code></pre>
+    <h3>Zwei Release-Branches vergleichen</h3>
+    <pre><code>git worktree add ../release-1.4 release/1.4
+    git worktree add ../release-1.5 release/1.5
+    diff -ru ../release-1.4/src ../release-1.5/src</code></pre>
+    <h3>Lang laufende CI-Builds</h3>
+    <pre><code>git worktree add ./build-linux $SHA
+    git worktree add ./build-windows $SHA</code></pre>
+    <h3>Backups vor destruktiven Operationen</h3>
+    <pre><code>git worktree add ../backup HEAD
+    git rebase -i HEAD~20</code></pre>
+    <h2>Limitierungen</h2>
+    <ul>
+      <li>Derselbe Branch kann nicht in zwei Worktrees sein.</li>
+      <li>Hooks konnen sich falsch verhalten.</li>
+      <li>Submodule konnen seltsam interagieren.</li>
+    </ul>
+    <h2>Aliase</h2>
+    <pre><code>[alias]
+        wt = worktree
+        wta = worktree add
+        wtl = worktree list
+        wtr = worktree remove</code></pre>
+
+- source_title: "Creating a monorepo from multiple repositories"
+  title: "Ein Monorepo aus mehreren Repositories erstellen"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden mehrere bestehende Git-Repositories in einem einzigen Monorepo kombinieren und die Historie jedes Repos unter seinem eigenen Unterverzeichnis bewahren.</p>
+    <h2>Voraussetzungen</h2>
+    <ul>
+      <li>Aktuelles Git (2.30+).</li>
+      <li><code>git filter-repo</code> installiert.</li>
+      <li>Die Quell-Repositories.</li>
+    </ul>
+    <h2>Schritt 1: jede Quelle vorbereiten</h2>
+    <pre><code>mkdir monorepo-staging &amp;&amp; cd monorepo-staging
+
+    # Repo 1: web app
+    git clone --no-local /path/to/web-source web-prep
+    cd web-prep
+    git filter-repo --to-subdirectory-filter packages/web
+    cd ..
+
+    # Repo 2: shared UI library
+    git clone --no-local /path/to/ui-source ui-prep
+    cd ui-prep
+    git filter-repo --to-subdirectory-filter packages/ui
+    cd ..
+
+    # Repo 3: CLI tool
+    git clone --no-local /path/to/cli-source cli-prep
+    cd cli-prep
+    git filter-repo --to-subdirectory-filter packages/cli
+    cd ..</code></pre>
+    <h2>Schritt 2: das Monorepo erstellen</h2>
+    <pre><code>git init monorepo
+    cd monorepo
+    git commit --allow-empty -m "Initial monorepo commit"</code></pre>
+    <h2>Schritt 3: jede Quelle importieren</h2>
+    <pre><code>git remote add web-source ../web-prep
+    git fetch web-source
+    git merge --allow-unrelated-histories web-source/main -m "Import web from web-source"
+    git remote remove web-source
+
+    git remote add ui-source ../ui-prep
+    git fetch ui-source
+    git merge --allow-unrelated-histories ui-source/main -m "Import ui from ui-source"
+    git remote remove ui-source
+
+    git remote add cli-source ../cli-prep
+    git fetch cli-source
+    git merge --allow-unrelated-histories cli-source/main -m "Import cli from cli-source"
+    git remote remove cli-source</code></pre>
+    <h2>Schritt 4: Historie verifizieren</h2>
+    <pre><code>git log --oneline
+    git log --follow packages/web/src/index.js
+    git blame packages/ui/src/Button.js</code></pre>
+    <h2>Schritt 5: Monorepo-Tooling</h2>
+    <pre><code># package.json
+    {
+      "private": true,
+      "workspaces": ["packages/*"],
+      "scripts": {
+        "build": "turbo run build",
+        "test": "turbo run test",
+        "lint": "turbo run lint"
+      }
+    }</code></pre>
+    <h2>Schritt 6: Affected-only CI</h2>
+    <pre><code>turbo run test --filter=...[origin/main]
+    npx nx affected:test --base=origin/main</code></pre>
+    <h2>Schritt 7: Sparse Checkout</h2>
+    <pre><code>git clone --filter=blob:none --sparse &lt;url&gt;
+    cd monorepo
+    git sparse-checkout init --cone
+    git sparse-checkout set packages/web</code></pre>
+    <h2>Schritt 8: Quell-Repos archivieren</h2>
+    <p>Quell-Repos read-only machen.</p>
+    <h2>Schritt 9: kommunizieren</h2>
+    <p>Das Team trainieren: neue Klon-URL, Build-Befehle, wie ein neues Paket hinzugefugt wird.</p>
+    <h2>Schritt 10: Cross-Package-Refactors</h2>
+    <p>Der Payoff: eine Funktion in <code>packages/ui</code> umbenennen und ihre Aufrufer in <code>packages/web</code> in einem einzelnen Commit aktualisieren.</p>
+    <h2>Fallstricke</h2>
+    <ul>
+      <li>Repository-Grosse wachst.</li>
+      <li>CI ist langsam ohne affected-only Filterung.</li>
+      <li>Berechtigungs-Granularitat ist schwieriger.</li>
+    </ul>
+
+- source_title: "Automating version bumps and changelogs"
+  title: "Versionsanhebungen und Changelogs automatisieren"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden automatisierte Versionsanhebungen und Changelog-Generierung einrichten, gesteuert durch Conventional Commits.</p>
+    <h2>Der Mechanismus</h2>
+    <p>Tooling liest Commit-Nachrichten, die dem Conventional-Commits-Format folgen.</p>
+    <h2>Schritt 1: Conventional Commits ubernehmen</h2>
+    <pre><code>git commit -m "feat(checkout): add Apple Pay support"
+    git commit -m "fix(auth): handle expired refresh tokens"
+    git commit -m "chore(deps): bump axios to 1.7.0"
+    git commit -m "feat!: drop Node 16 support
+
+    BREAKING CHANGE: minimum Node version is now 18."</code></pre>
+    <h2>Schritt 2: das Format durchsetzen</h2>
+    <pre><code>npm install --save-dev @commitlint/cli @commitlint/config-conventional husky
+
+    # commitlint.config.js
+    module.exports = { extends: ['@commitlint/config-conventional'] };
+
+    # .husky/commit-msg
+    #!/usr/bin/env sh
+    . "$(dirname "$0")/_/husky.sh"
+    npx --no -- commitlint --edit $1</code></pre>
+    <h2>Schritt 3: Release-Tooling installieren</h2>
+    <pre><code># .github/workflows/release-please.yml
+    name: release-please
+    on:
+      push:
+        branches: [main]
+    permissions:
+      contents: write
+      pull-requests: write
+    jobs:
+      release-please:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: googleapis/release-please-action@v4
+            with:
+              release-type: node
+              package-name: my-app</code></pre>
+    <h2>Schritt 4: wie release-please funktioniert</h2>
+    <ol>
+      <li>Liest Commits seit dem letzten Release-Tag.</li>
+      <li>Kategorisiert nach Typ und entscheidet die nachste Version.</li>
+      <li>Aktualisiert <code>CHANGELOG.md</code> und <code>package.json</code>-Version.</li>
+      <li>Offnet eine "Release-PR".</li>
+    </ol>
+    <h2>Schritt 5: den Publish-Workflow auslosen</h2>
+    <pre><code># .github/workflows/publish.yml
+    name: publish
+    on:
+      push:
+        tags: ['v*.*.*']
+    jobs:
+      publish:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-node@v4
+            with:
+              node-version: '20'
+              registry-url: 'https://registry.npmjs.org'
+          - run: npm ci
+          - run: npm run build
+          - run: npm publish
+            env:
+              NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}</code></pre>
+    <h2>Schritt 6: Alternative - changesets</h2>
+    <pre><code>npm install --save-dev @changesets/cli
+    npx changeset init</code></pre>
+    <h2>Schritt 7: Alternative - semantic-release</h2>
+    <pre><code>npm install --save-dev semantic-release
+    # .releaserc.json
+    {
+      "branches": ["main"],
+      "plugins": [
+        "@semantic-release/commit-analyzer",
+        "@semantic-release/release-notes-generator",
+        "@semantic-release/changelog",
+        "@semantic-release/npm",
+        "@semantic-release/github",
+        "@semantic-release/git"
+      ]
+    }</code></pre>
+    <h2>Schritt 8: Pre-Releases</h2>
+    <pre><code>git checkout -b beta
+    git push -u origin beta</code></pre>
+    <pre><code>{
+      "branches": ["main", { "name": "beta", "prerelease": true }]
+    }</code></pre>
+    <h2>Schritt 9: gute Commit-Nachrichten schreiben</h2>
+    <pre><code>feat(checkout): add Apple Pay support
+
+    Implements Apple Pay via the Web Payments API. Falls back to the
+    existing card flow if Apple Pay is unavailable. Closes #1234.</code></pre>
+    <h2>Schritt 10: Squashes handhaben</h2>
+    <pre><code>- uses: amannn/action-semantic-pull-request@v5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}</code></pre>
+
+- source_title: "Debugging with git blame and git log"
+  title: "Debugging mit git blame und git log"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden <code>git blame</code> und <code>git log</code> zusammen verwenden, um die Historie einer fehlerhaften Zeile zu rekonstruieren.</p>
+    <h2>Einen Sandbox einrichten</h2>
+    <pre><code>mkdir blame-tutorial &amp;&amp; cd blame-tutorial
+    git init
+    cat &gt; calc.js &lt;&lt;'EOF'
+    function divide(a, b) {
+      return a / b;
+    }
+    module.exports = { divide };
+    EOF
+    git add . &amp;&amp; git commit -m "Initial divide function"
+
+    sed -i.bak '2i\
+      if (b === 0) throw new Error("Division by zero");
+    ' calc.js &amp;&amp; rm calc.js.bak
+    git commit -am "Add zero check"
+
+    sed -i.bak 's|if (b === 0)|if (b == 0)|' calc.js &amp;&amp; rm calc.js.bak
+    git commit -am "Style: use loose equality for zero check"</code></pre>
+    <h2>Schritt 1: die verdachtige Zeile blamen</h2>
+    <pre><code>git blame -L 2,3 calc.js</code></pre>
+    <h2>Schritt 2: den verdachtigen Commit inspizieren</h2>
+    <pre><code>git show &lt;sha&gt;</code></pre>
+    <h2>Schritt 3: durch die Datei-Historie laufen</h2>
+    <pre><code>git log --follow -p calc.js</code></pre>
+    <h2>Schritt 4: finden, wann ein String eingefuhrt wurde</h2>
+    <pre><code>git log -S 'Division by zero' --oneline -- calc.js
+    git log -G 'b\\s*[!=]==?\\s*0' --oneline -- calc.js</code></pre>
+    <h2>Schritt 5: Blame ohne Formatter-Commits</h2>
+    <pre><code># .git-blame-ignore-revs
+    abc1234   # Apply prettier across codebase
+    def5678   # Apply black to all Python</code></pre>
+    <pre><code>git config blame.ignoreRevsFile .git-blame-ignore-revs
+    git blame -L 2,3 calc.js</code></pre>
+    <h2>Schritt 6: Blame uber Umbenennungen und Verschiebungen</h2>
+    <pre><code>git blame -M calc.js
+    git blame -C calc.js
+    git blame -CCC calc.js</code></pre>
+    <h2>Schritt 7: Log mit detaillierten Filtern</h2>
+    <pre><code>git log --since='1 month' --author='Alice'
+    git log --grep='checkout'
+    git log -p -L :divide:calc.js</code></pre>
+    <h2>Schritt 8: Log einer Datei-Region</h2>
+    <pre><code>git log -L 1,5:calc.js</code></pre>
+    <h2>Schritt 9: mit Bisect kombinieren</h2>
+    <pre><code>git bisect start
+    git bisect bad HEAD
+    git bisect good v1.0.0
+    git bisect run npm test</code></pre>
+    <h2>Schritt 10: die Divergenz graphen</h2>
+    <pre><code>git log --graph --oneline --all -20</code></pre>
+    <h2>Realer Workflow</h2>
+    <ol>
+      <li>Den Bug reproduzieren.</li>
+      <li><code>git blame</code> der verdachtigen Zeile.</li>
+      <li><code>git show</code> den Commit; die Nachricht lesen.</li>
+      <li>Bei Bedarf durch die Datei-Historie laufen.</li>
+      <li>Den Autor fragen.</li>
+    </ol>
+    <h2>Etikette</h2>
+    <p>Blame ist zum Verstehen, nicht zum Fingerzeigen.</p>
+    <h2>Tooling</h2>
+    <p>VS Codes GitLens, JetBrains Annotate, <code>fugitive.vim</code>.</p>
+
+- source_title: "Setting up a code review workflow with Git"
+  title: "Einen Code-Review-Workflow mit Git einrichten"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden einen Code-Review-Workflow konfigurieren, der von drei bis dreissig Mitwirkenden skaliert.</p>
+    <h2>Schritt 1: ein Modell wahlen</h2>
+    <p>Das dominante Modell im Jahr 2026 ist GitHub Flow.</p>
+    <h2>Schritt 2: Branch-Schutz</h2>
+    <ul>
+      <li>Eine Pull Request erfordern.</li>
+      <li>Mindestens einen genehmigenden Review erfordern.</li>
+      <li>Veraltete Genehmigungen verwerfen.</li>
+      <li>Status-Checks erfordern.</li>
+      <li>Lineare Historie erfordern.</li>
+      <li>Force-Pushes verbieten.</li>
+      <li>Direktes Loschen verbieten.</li>
+    </ul>
+    <pre><code>gh api -X PUT repos/owner/repo/branches/main/protection \
+      -F required_pull_request_reviews.required_approving_review_count=1 \
+      -F required_status_checks.strict=true \
+      -F enforce_admins=true</code></pre>
+    <h2>Schritt 3: CODEOWNERS</h2>
+    <pre><code># .github/CODEOWNERS
+    *               @org/maintainers
+    /infra/         @org/devops
+    /docs/          @org/docs-team
+    *.sql           @org/dba</code></pre>
+    <h2>Schritt 4: PR-Template</h2>
+    <pre><code># .github/PULL_REQUEST_TEMPLATE.md
+    ## Summary
+    Brief description of the change.
+
+    ## Why
+    Context, links to issues.
+
+    ## How tested
+    - [ ] Unit tests added/updated
+    - [ ] Manual smoke test
+    - [ ] CI green
+
+    ## Screenshots / videos (UI only)
+
+    ## Risk and rollback
+    Anything reviewers should worry about.</code></pre>
+    <h2>Schritt 5: automatisierte Checks</h2>
+    <pre><code># .github/workflows/ci.yml
+    name: CI
+    on:
+      pull_request:
+      push:
+        branches: [main]
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-node@v4
+            with: { node-version: '20' }
+          - run: npm ci
+          - run: npm run lint
+          - run: npm run typecheck
+          - run: npm test</code></pre>
+    <h2>Schritt 6: Bot-Integrationen</h2>
+    <ul>
+      <li><strong>Dependabot / Renovate</strong>.</li>
+      <li><strong>gitleaks</strong>.</li>
+      <li><strong>Codecov</strong> oder <strong>Coveralls</strong>.</li>
+      <li><strong>danger.js</strong>.</li>
+    </ul>
+    <h2>Schritt 7: Review-Konventionen</h2>
+    <pre><code># CONTRIBUTING.md
+    ## For authors
+    - Branch off main; name `type/PROJ-1234-description`.
+    - Keep PRs under 400 lines if possible.
+    - Self-review the diff before requesting review.
+    - Link the ticket; include screenshots for UI changes.
+    - Address every reviewer comment.
+
+    ## For reviewers
+    - Respond within one working day.
+    - Distinguish blocking comments from suggestions.
+    - Approve or request changes.
+    - Trust the author's judgement on style.</code></pre>
+    <h2>Schritt 8: Kommentar-Konventionen</h2>
+    <ul>
+      <li><strong>nit:</strong> kleinere stilistische Anregung.</li>
+      <li><strong>question:</strong> Klarung suchen.</li>
+      <li><strong>suggestion:</strong> vorgeschlagene Anderung.</li>
+      <li><strong>blocker:</strong> muss adressiert werden.</li>
+      <li><strong>praise:</strong> etwas gut Gemachtes hervorheben.</li>
+    </ul>
+    <h2>Schritt 9: klein reviewen, oft reviewen</h2>
+    <ul>
+      <li>PRs uber 400 Zeilen erhalten weniger grundliche Reviews.</li>
+      <li>Stacked PRs ermutigen.</li>
+      <li>Selbstuberprufung vor Anforderung.</li>
+    </ul>
+    <h2>Schritt 10: Meinungsverschiedenheiten handhaben</h2>
+    <ol>
+      <li>In PR-Kommentaren diskutieren.</li>
+      <li>Eskalation zu einem dritten Reviewer.</li>
+      <li>Offline entscheiden.</li>
+    </ol>
+    <h2>Schritt 11: Post-Merge-Hygiene</h2>
+    <ul>
+      <li>Gemergte Branches automatisch loschen.</li>
+      <li>Periodisches Aufraumen veralteter PRs.</li>
+      <li>PR-Zykluszeit verfolgen.</li>
+    </ul>
+    <h2>Schritt 12: kontinuierliche Verbesserung</h2>
+    <p>Vierteljahrliches Retro zum Review-Prozess halten.</p>
+
+- source_title: "Recovering from a bad rebase"
+  title: "Wiederherstellung nach einem schlechten Rebase"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden absichtlich einen Rebase vermurksen und dann mit Reflog und <code>ORIG_HEAD</code> wiederherstellen.</p>
+    <h2>Setup: ein Sandbox mit echten Commits</h2>
+    <pre><code>mkdir rebase-recovery &amp;&amp; cd rebase-recovery
+    git init
+    for i in 1 2 3 4 5; do
+      echo "$i" &gt; file.txt
+      git add . &amp;&amp; git commit -m "Commit $i"
+    done
+    git log --oneline</code></pre>
+    <h2>Katastrophe 1: versehentlich gedroppte Commits</h2>
+    <pre><code>git rebase -i HEAD~4</code></pre>
+    <pre><code>git log --oneline</code></pre>
+    <h2>Wiederherstellung 1: <code>ORIG_HEAD</code></h2>
+    <pre><code>git reset --hard ORIG_HEAD
+    git log --oneline</code></pre>
+    <h2>Katastrophe 2: Rebase-Konfliktauflosung schiefgegangen</h2>
+    <pre><code>git checkout -b feature HEAD~2
+    echo "feature change" &gt;&gt; file.txt
+    git commit -am "Feature change"
+    git rebase main</code></pre>
+    <h2>Wiederherstellung 2: Reflog</h2>
+    <pre><code>git reflog
+    git reset --hard HEAD@{3}</code></pre>
+    <h2>Katastrophe 3: Rebase, dann mehr Arbeit, dann erkannt, dass Rebase falsch war</h2>
+    <pre><code>git reflog
+    git reset --hard &lt;sha-before-rebase&gt;</code></pre>
+    <pre><code>git branch save-work HEAD~2..HEAD
+    git reset --hard &lt;sha-before-rebase&gt;
+    git cherry-pick save-work
+    git branch -D save-work</code></pre>
+    <h2>Katastrophe 4: schlechten Rebase force-gepushed</h2>
+    <pre><code>git reflog
+    git reset --hard &lt;good-sha&gt;
+    git push --force-with-lease</code></pre>
+    <h2>Katastrophe 5: Rebase hat den falschen Elternteil gefressen</h2>
+    <pre><code>git reset --hard ORIG_HEAD
+    git rebase main</code></pre>
+    <h2>Zukunftige Katastrophen verhindern</h2>
+    <h3>Backup-Branch vor riskanten Operationen</h3>
+    <pre><code>git branch backup-before-rebase
+    git rebase -i HEAD~10
+    git reset --hard backup-before-rebase
+    git branch -D backup-before-rebase</code></pre>
+    <h3>Reflog-Ablauf erhohen</h3>
+    <pre><code>git config gc.reflogExpire 365.days
+    git config gc.reflogExpireUnreachable 90.days</code></pre>
+    <h3>Vor dem Rebase pushen</h3>
+    <pre><code>git push backup HEAD:my-branch-backup
+    git rebase ...</code></pre>
+    <h3>Rerere aktivieren</h3>
+    <pre><code>git config --global rerere.enabled true</code></pre>
+
+- source_title: "Building a release pipeline with Git tags and CI/CD"
+  title: "Eine Release-Pipeline mit Git-Tags und CI/CD bauen"
+  langcode: de
+  body: |
+    <h2>Was Sie erreichen werden</h2>
+    <p>Sie werden eine Release-Pipeline bauen, die einen Git-Tag in ein deploytes Artefakt verwandelt — signiert, getestet, versioniert und veroffentlicht.</p>
+    <h2>Der Vertrag</h2>
+    <ul>
+      <li>Einen Tag pushen, der <code>v*.*.*</code> entspricht.</li>
+      <li>CI baut, testet, signiert und veroffentlicht.</li>
+      <li>Ein GitHub-Release wird erstellt.</li>
+      <li>Das Deployment ist geloggt und verifizierbar.</li>
+    </ul>
+    <h2>Schritt 1: Tag-Konventionen</h2>
+    <pre><code>git tag -a v1.4.0 -m "Release 1.4.0"
+    git tag -s v1.4.0 -m "Release 1.4.0"</code></pre>
+    <h2>Schritt 2: den Workflow konfigurieren</h2>
+    <pre><code># .github/workflows/release.yml
+    name: release
+    on:
+      push:
+        tags: ['v*.*.*']
+
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    jobs:
+      release:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+            with:
+              fetch-depth: 0
+          - uses: actions/setup-node@v4
+            with:
+              node-version: '20'
+              registry-url: 'https://registry.npmjs.org'
+          - run: npm ci
+          - run: npm run lint
+          - run: npm test
+          - run: npm run build
+          - run: npm publish --provenance --access public
+            env:
+              NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}</code></pre>
+    <h2>Schritt 3: Release-Notes auto-generieren</h2>
+    <pre><code>      - name: Generate notes
+        id: notes
+        uses: orhun/git-cliff-action@v2
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.notes.outputs.content }}
+          generate_release_notes: true</code></pre>
+    <h2>Schritt 4: Build-Matrix fur Multi-Plattform-Releases</h2>
+    <pre><code>jobs:
+      build:
+        strategy:
+          matrix:
+            os: [ubuntu-latest, macos-latest, windows-latest]
+        runs-on: ${{ matrix.os }}
+        steps:
+          - uses: actions/checkout@v4
+          - run: cargo build --release
+          - uses: actions/upload-artifact@v4
+            with:
+              name: bin-${{ matrix.os }}
+              path: target/release/myapp*</code></pre>
+    <h2>Schritt 5: signierte Artefakte</h2>
+    <pre><code>      - uses: sigstore/cosign-installer@v3
+      - run: |
+          cosign sign-blob --yes \
+            --output-certificate cert.pem \
+            --output-signature sig.bin \
+            dist/myapp-1.4.0.tgz</code></pre>
+    <h2>Schritt 6: Docker-Image-Release</h2>
+    <pre><code>      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:latest</code></pre>
+    <h2>Schritt 7: Deploy nach Publish</h2>
+    <pre><code>      - name: Deploy to production
+        run: ./scripts/deploy.sh
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}</code></pre>
+    <h2>Schritt 8: Benachrichtigung</h2>
+    <pre><code>      - name: Slack notify
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Released ${{ github.ref_name }} :rocket:"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}</code></pre>
+    <h2>Schritt 9: Pre-Release-Kanale</h2>
+    <pre><code>jobs:
+      release:
+        steps:
+          - id: classify
+            run: |
+              if [[ "${{ github.ref_name }}" =~ -(alpha|beta|rc) ]]; then
+                echo "tag=next" &gt;&gt; $GITHUB_OUTPUT
+              else
+                echo "tag=latest" &gt;&gt; $GITHUB_OUTPUT
+              fi
+          - run: npm publish --tag ${{ steps.classify.outputs.tag }}</code></pre>
+    <h2>Schritt 10: mit release-please integrieren</h2>
+    <p>Automatisierte Versionsanhebung mit dieser Pipeline kombinieren.</p>
+    <h2>Schritt 11: SHA in Artefakten taggen</h2>
+    <pre><code>      - name: Get short SHA
+        id: vars
+        run: echo "sha=$(git rev-parse --short HEAD)" &gt;&gt; $GITHUB_OUTPUT
+      - run: docker build -t myapp:${{ github.ref_name }} -t myapp:${{ steps.vars.outputs.sha }} .</code></pre>
+    <h2>Schritt 12: Tag-Schutz</h2>
+    <pre><code>gh api -X POST repos/owner/repo/tags/protection \
+      -F pattern='v*.*.*'</code></pre>
+    <h2>Haufige Fallstricke</h2>
+    <ul>
+      <li>Pipeline lauft bei jedem Push.</li>
+      <li>Force-Push von Tags nach Release.</li>
+      <li>Geheimnisse in CI-Logs.</li>
+      <li>Build von main bei Tag-Push.</li>
+    </ul>

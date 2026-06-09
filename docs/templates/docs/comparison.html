@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags i18n %}
+
+{% block content %}
+  <article class="prose comparison">
+    <h1>{{ page.title }}</h1>
+    {% include "docs/_meta.html" %}
+    {% if page.compared_systems %}
+      <p class="compared-systems"><strong>{% trans "Compared:" %}</strong> {{ page.compared_systems }}</p>
+    {% endif %}
+    {{ page.body|richtext }}
+    {% if page.feature_table %}
+      <div class="feature-table">{{ page.feature_table|richtext }}</div>
+    {% endif %}
+    {% if page.verdict %}
+      <aside class="verdict">
+        <h2>{% trans "Verdict" %}</h2>
+        {{ page.verdict|richtext }}
+      </aside>
+    {% endif %}
+  </article>
+{% endblock %}

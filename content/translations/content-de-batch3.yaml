@@ -1,0 +1,2413 @@
+# GitMastery deutscher Inhalt - Batch 3
+# Sektionen: Fortgeschritten (40 Seiten) und Performance & Optimierung (30 Seiten)
+
+- source_title: "Interactive rebase mastery: git rebase -i in depth"
+  title: "Interaktiven Rebase meistern: git rebase -i im Detail"
+  langcode: de
+  body: |
+    <h2>Warum interaktiver Rebase</h2>
+    <p>Der interaktive Rebase schreibt eine Sequenz von Commits in eine sauberere, aussagekraftigere Historie um, bevor sie veroffentlicht wird. Es ist das chirurgische Instrument von Git: Sie konnen Commits umordnen, bearbeiten, mit squash zusammenfassen, fixen, loschen, umbenennen oder aufteilen — alles in einer einzigen gefuhrten Sitzung.</p>
+    <h2>Die Todo-Liste</h2>
+    <p>Das Ausfuhren von <code>git rebase -i</code> offnet einen Editor mit einer Todo-Liste. Jede Zeile hat ein Verb und einen Commit. Zeilen umordnen, um Commits umzuordnen.</p>
+    <pre><code>git rebase -i HEAD~5</code></pre>
+    <p>Verben: <code>pick</code>, <code>reword</code>, <code>edit</code>, <code>squash</code>, <code>fixup</code>, <code>drop</code>, <code>exec</code>, <code>break</code>, sowie <code>label</code>/<code>reset</code>/<code>merge</code> fur den Rebase-Merge-Graphen (ab Git 2.18).</p>
+    <h2>Einen Commit aufteilen</h2>
+    <pre><code>git reset HEAD^
+    git add -p
+    git commit -m "First logical change"
+    git add -p
+    git commit -m "Second logical change"
+    git rebase --continue</code></pre>
+    <h2>Autosquash-Workflow</h2>
+    <pre><code>git commit --fixup=&lt;sha&gt;
+    git rebase -i --autosquash HEAD~10</code></pre>
+    <p>Setzen Sie <code>rebase.autoSquash = true</code> und <code>rebase.autoStash = true</code> in der Konfiguration.</p>
+    <h2>Exec zur Verifikation</h2>
+    <pre><code>git rebase -i --exec "cargo test" main</code></pre>
+    <h2>Rebase merges mit --rebase-merges</h2>
+    <pre><code>git rebase -i --rebase-merges main</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Rebase von veroffentlichten Commits zwingt Mitarbeiter zu Historie-Operationen. Reservieren Sie ihn fur Branches, die Sie allein besitzen. <code>git reflog</code> rettet fast immer verlorene Arbeit.</p>
+    <h2>Wiederherstellung</h2>
+    <pre><code>git rebase --abort
+    git reflog
+    git reset --hard HEAD@{5}</code></pre>
+
+- source_title: "Cherry-picking strategies and pitfalls"
+  title: "Cherry-pick: Strategien und Fallstricke"
+  langcode: de
+  body: |
+    <h2>Was cherry-pick tut</h2>
+    <p><code>git cherry-pick</code> wendet das Diff eines oder mehrerer Commits auf den aktuellen Branch als neue Commits an. Das richtige Werkzeug, wenn Sie eine spezifische Anderung ohne Merge des gesamten Branches mochten — typisch fur Backports von Fixes auf Release-Branches.</p>
+    <h2>Grundlegende und Range-Verwendung</h2>
+    <pre><code>git cherry-pick &lt;sha&gt;
+    git cherry-pick A..B
+    git cherry-pick A^..B</code></pre>
+    <h2>Konflikte losen</h2>
+    <pre><code>git cherry-pick --continue
+    git cherry-pick --skip
+    git cherry-pick --abort</code></pre>
+    <h2>Quelle aufzeichnen</h2>
+    <pre><code>git cherry-pick -x &lt;sha&gt;</code></pre>
+    <h2>Mainline fur Merges</h2>
+    <pre><code>git cherry-pick -m 1 &lt;merge-sha&gt;</code></pre>
+    <h2>Falle: divergierende Historien</h2>
+    <p>Cherry-pick erstellt einen neuen Commit mit anderem SHA als das Original. Wenn beide Branches schliesslich gemerged werden, sohnt Git sie oft aus, aber wenn die zwei Kopien durch spatere Bearbeitungen divergiert sind, riskieren Sie erneutes Anwenden oder Konflikt.</p>
+    <h2>Falle: stille semantische Drift</h2>
+    <p>Ein textuell sauberer cherry-pick kann das Verhalten dennoch zerstoren, wenn der umgebende Code seine Bedeutung verandert hat.</p>
+    <h2>Angewandte Picks verfolgen</h2>
+    <pre><code>git log -p &lt;sha&gt; | git patch-id
+    git log -p main | git patch-id</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Cherry-pick ohne <code>-x</code> auf einem Release-Branch macht Audit-Spuren schmerzhaft.</p>
+
+- source_title: "Automatic bug bisection with git bisect"
+  title: "Automatische Bug-Bisektion mit git bisect"
+  langcode: de
+  body: |
+    <h2>Binare Suche durch die Historie</h2>
+    <p><code>git bisect</code> fuhrt eine binare Suche uber Commits durch, um den zu finden, der einen Bug eingefuhrt hat. Bei einem bekannt-guten und einem bekannt-schlechten Commit checkt Git Commits in der Mitte aus und fragt zum Testen.</p>
+    <h2>Manuelle Bisect-Sitzung</h2>
+    <pre><code>git bisect start
+    git bisect bad
+    git bisect good v2.4.0
+    git bisect bad
+    git bisect reset</code></pre>
+    <h2>Benutzerdefinierte Begriffe</h2>
+    <pre><code>git bisect start --term-old fast --term-new slow
+    git bisect slow
+    git bisect fast v2.4.0</code></pre>
+    <h2>Untestbare Commits uberspringen</h2>
+    <pre><code>git bisect skip
+    git bisect skip &lt;sha1&gt; &lt;sha2&gt;</code></pre>
+    <h2>Visualisierung</h2>
+    <pre><code>git bisect visualize
+    git bisect log &gt; bisect.log
+    git bisect replay bisect.log</code></pre>
+    <h2>Suche eingrenzen</h2>
+    <pre><code>git bisect start -- src/parser/</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Endpunkte vergessen zu markieren. Einen Commit falsch markieren vergiftet die Suche.</p>
+    <h2>First-parent bisecting</h2>
+    <pre><code>git bisect start --first-parent</code></pre>
+
+- source_title: "Bisect with automated test scripts"
+  title: "Bisect mit automatisierten Testskripten"
+  langcode: de
+  body: |
+    <h2>Freihandige Bisektion</h2>
+    <p>Manueller Bisect erfordert ein menschliches Urteil bei jedem Schritt. <code>git bisect run</code> automatisiert die Schleife: liefern Sie ein Skript, das 0 fur gut, ungleich Null fur schlecht und 125 fur "diesen Commit uberspringen" zuruckgibt.</p>
+    <h2>Der Vertrag</h2>
+    <ul>
+      <li>Beendet mit 0, wenn der Commit gut ist.</li>
+      <li>Beendet zwischen 1 und 124, oder 126/127, wenn schlecht.</li>
+      <li>Beendet mit 125, wenn der Commit nicht getestet werden kann.</li>
+      <li>Vermeiden Sie Exit-Codes ausserhalb dieser Bereiche.</li>
+    </ul>
+    <h2>Beispiel</h2>
+    <pre><code>#!/usr/bin/env bash
+    set -e
+    make clean
+    make || exit 125
+    ./tests/regression-1234 || exit 1
+    exit 0</code></pre>
+    <pre><code>git bisect start HEAD v2.4.0
+    git bisect run ./bisect-test.sh</code></pre>
+    <h2>Inline-Einzeiler</h2>
+    <pre><code>git bisect run sh -c "make &amp;&amp; ./run-test || exit 1"</code></pre>
+    <h2>Performance-Regressionen</h2>
+    <pre><code>git bisect run sh -c '
+      cargo build --release || exit 125
+      t=$(./bench --json | jq .ms)
+      awk -v t="$t" "BEGIN { exit (t &gt; 250) }"'</code></pre>
+    <h2>Flaky-Tests</h2>
+    <pre><code>git bisect run sh -c '
+      for i in 1 2 3 4 5; do
+        ./flaky-test || exit 1
+      done
+      exit 0'</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Exit-Code 128+ mitten in der Suche zuruckgeben bricht den Bisect ab.</p>
+    <h2>Reproduzierbare Berichte</h2>
+    <pre><code>git bisect log &gt; bisect.log</code></pre>
+
+- source_title: "Submodules: adding and updating"
+  title: "Submodule: hinzufugen und aktualisieren"
+  langcode: de
+  body: |
+    <h2>Was Submodule sind</h2>
+    <p>Ein Submodul ist ein Git-Repository, das in einem anderen verschachtelt ist. Das ubergeordnete Repo zeichnet die URL des Submoduls und einen spezifischen Commit-SHA auf, sodass jeder, der das ubergeordnete klont, genau den gemeinsam getesteten Code abrufen kann.</p>
+    <h2>Submodul hinzufugen</h2>
+    <pre><code>git submodule add https://github.com/example/lib third_party/lib
+    git commit -m "Add lib submodule"</code></pre>
+    <h2>Projekt mit Submodulen klonen</h2>
+    <pre><code>git clone --recurse-submodules https://github.com/you/parent
+    git submodule update --init --recursive</code></pre>
+    <h2>Auf neuen Submodul-Commit aktualisieren</h2>
+    <pre><code>cd third_party/lib
+    git fetch
+    git checkout v2.0.0
+    cd ../..
+    git add third_party/lib
+    git commit -m "Bump lib to v2.0.0"</code></pre>
+    <h2>Diff und Status</h2>
+    <pre><code>git diff --submodule=log
+    git submodule status
+    git submodule summary</code></pre>
+    <h2>Foreach</h2>
+    <pre><code>git submodule foreach 'git fetch --all'
+    git submodule foreach --recursive 'git checkout main &amp;&amp; git pull'</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p><code>--init</code> beim ersten Klonen vergessen lasst Submodul-Verzeichnisse leer. Im Submodul bearbeiten und im Parent committen ohne vorher das Submodul zu pushen.</p>
+    <h2>Branch-Tracking-Falle</h2>
+    <p>Submodule checken am aufgezeichneten SHA detached HEAD aus.</p>
+
+- source_title: "Submodules: common problems and solutions"
+  title: "Submodule: haufige Probleme und Losungen"
+  langcode: de
+  body: |
+    <h2>Die Frustrationsliste</h2>
+    <p>Submodule sind machtig, bringen aber neue Nutzer wiederholt zu Fall. Diese Seite katalogisiert die haufigsten Fehler.</p>
+    <h2>Leeres Submodul-Verzeichnis</h2>
+    <pre><code>git submodule update --init --recursive</code></pre>
+    <h2>Detached-HEAD-Anderungen verloren</h2>
+    <pre><code>cd third_party/lib
+    git reflog
+    git checkout -b rescue HEAD@{1}</code></pre>
+    <h2>URL upstream geandert</h2>
+    <pre><code>git submodule sync --recursive
+    git submodule update --init --recursive</code></pre>
+    <h2>Submodul entfernen</h2>
+    <pre><code>git submodule deinit -f third_party/lib
+    git rm -f third_party/lib
+    rm -rf .git/modules/third_party/lib
+    git commit -m "Remove lib submodule"</code></pre>
+    <h2>Inhalt geandert aber kein Diff</h2>
+    <pre><code>git submodule update --recursive
+    git add third_party/lib &amp;&amp; git commit -m "Bump lib"</code></pre>
+    <h2>Push-Reihenfolge zahlt</h2>
+    <pre><code>git config --global push.recurseSubmodules on-demand</code></pre>
+    <h2>Shallow-Submodule</h2>
+    <pre><code>git submodule update --init --recursive --depth 1</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Submodule wie normale Unterverzeichnisse behandeln — sie sind es nicht.</p>
+
+- source_title: "Subtrees: a simpler alternative to submodules"
+  title: "Subtrees: einfachere Alternative zu Submodulen"
+  langcode: de
+  body: |
+    <h2>Das Subtree-Modell</h2>
+    <p>Ein Subtree fugt die Historie eines anderen Repositorys in ein Unterverzeichnis Ihres ein. Anders als Submodule gibt es keinen separaten Gitlink und keine zusatzlichen Befehle beim Klonen.</p>
+    <h2>Subtree hinzufugen</h2>
+    <pre><code>git subtree add --prefix=third_party/lib \
+      https://github.com/example/lib main --squash</code></pre>
+    <h2>Updates ziehen</h2>
+    <pre><code>git subtree pull --prefix=third_party/lib \
+      https://github.com/example/lib main --squash</code></pre>
+    <pre><code>git remote add lib https://github.com/example/lib
+    git subtree pull --prefix=third_party/lib lib main --squash</code></pre>
+    <h2>Push zuruck zu upstream</h2>
+    <pre><code>git subtree push --prefix=third_party/lib lib feature-branch</code></pre>
+    <h2>Subtree vs Submodul</h2>
+    <p>Subtrees fur reibungsloses Klonen, wenn Sie selten den vendored Code andern. Submodule, wenn Sie auf einen genauen upstream-SHA pinnen mussen.</p>
+    <h2>Unterverzeichnis aufteilen</h2>
+    <pre><code>git subtree split --prefix=third_party/lib -b lib-only
+    cd ..
+    git clone /path/to/parent --branch lib-only lib-extracted</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p><code>--squash</code> vergessen importiert zehntausende upstream-Commits.</p>
+    <h2>Alternative Subtree-Merge-Strategie</h2>
+    <pre><code>git remote add -f lib https://github.com/example/lib
+    git merge -s ours --no-commit --allow-unrelated-histories lib/main
+    git read-tree --prefix=third_party/lib/ -u lib/main
+    git commit -m "Subtree merge of lib"</code></pre>
+
+- source_title: "filter-repo: rewriting history safely"
+  title: "filter-repo: Historie sicher umschreiben"
+  langcode: de
+  body: |
+    <h2>Warum filter-repo</h2>
+    <p><code>git filter-repo</code> ist der moderne Ersatz fur das veraltete <code>git filter-branch</code>. Drastisch schneller — manchmal 100x — sicherer per Default und bietet Hochlevel-Operationen, die Historie-Chirurgie tatsachlich braucht.</p>
+    <h2>Installation</h2>
+    <p>macOS: <code>brew install git-filter-repo</code>. Debian/Ubuntu: <code>apt install git-filter-repo</code>.</p>
+    <h2>Datei aus gesamter Historie entfernen</h2>
+    <pre><code>git filter-repo --path secrets.env --invert-paths</code></pre>
+    <h2>Unterverzeichnis als neues Repo extrahieren</h2>
+    <pre><code>git clone --no-local original/ extracted/
+    cd extracted
+    git filter-repo --subdirectory-filter packages/foo</code></pre>
+    <h2>Pfade umbenennen</h2>
+    <pre><code>git filter-repo --path-rename old/dir/:new/dir/</code></pre>
+    <h2>Autor-E-Mails aktualisieren</h2>
+    <pre><code>cat &gt; mailmap.txt &lt;&lt;'EOF'
+    Jane Doe &lt;jane@new.example&gt; &lt;jane@old.example&gt;
+    EOF
+    git filter-repo --mailmap mailmap.txt</code></pre>
+    <h2>Sicherheitsfeatures</h2>
+    <pre><code>git filter-repo --force</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Auf dem einzigen Klon mit <code>--force</code> und ohne Backup ausfuhren.</p>
+    <h2>Performance</h2>
+    <p>filter-repo nutzt <code>git fast-export</code>/<code>fast-import</code>, daher die Geschwindigkeit.</p>
+
+- source_title: "Removing sensitive data from history"
+  title: "Sensible Daten aus der Historie entfernen"
+  langcode: de
+  body: |
+    <h2>Vorfallsreaktion</h2>
+    <p>Sie haben einen API-Key, ein Passwort oder einen privaten Schlussel committet. Aus dem letzten Commit zu entfernen reicht nicht — Git behalt die Datei in jedem fruheren Commit, bis Sie die Historie umschreiben.</p>
+    <h2>Schritt 1: sofort rotieren</h2>
+    <p>Bevor Sie das Repo anfassen, widerrufen Sie die Anmeldedaten. Nehmen Sie an, dass jede gepushte Historie bereits gespiegelt, gescraped oder gecached wurde.</p>
+    <h2>Schritt 2: Historie mit filter-repo umschreiben</h2>
+    <pre><code>git clone --mirror git@github.com:org/repo.git repo-mirror
+    cd repo-mirror
+    git filter-repo --path config/secrets.yml --invert-paths</code></pre>
+    <pre><code>cat &gt; replace.txt &lt;&lt;'EOF'
+    regex:AKIA[0-9A-Z]{16}==&gt;REDACTED
+    literal:hunter2==&gt;REDACTED
+    EOF
+    git filter-repo --replace-text replace.txt</code></pre>
+    <h2>Schritt 3: force-push</h2>
+    <pre><code>git push --force --all
+    git push --force --tags</code></pre>
+    <h2>Schritt 4: lokale Objekte prunen</h2>
+    <pre><code>git reflog expire --expire=now --all
+    git gc --prune=now --aggressive</code></pre>
+    <h2>Geheimnisse fruh erkennen</h2>
+    <pre><code>#!/usr/bin/env bash
+    gitleaks protect --staged --redact || exit 1</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Glauben, dass force-push genug ist — Caches, Forks, Mirror und Team-Klone enthalten die Daten weiterhin.</p>
+    <h2>Audit</h2>
+    <pre><code>git log -p --all -S "AKIA"
+    git grep "hunter2" $(git rev-list --all)</code></pre>
+
+- source_title: "Squashing and reorganizing commits"
+  title: "Commits squashen und neu organisieren"
+  langcode: de
+  body: |
+    <h2>Warum squashen</h2>
+    <p>Ein Feature-Branch sammelt oft "WIP", "fix typo" und "address review" Commits, die die Absicht begraben. Squash kondensiert diese in eine kleine Anzahl logisch sinnvoller Commits vor dem Merge.</p>
+    <h2>Squash beim Merge</h2>
+    <pre><code>git checkout main
+    git merge --squash feature
+    git commit -m "Add feature X"</code></pre>
+    <h2>Squash mit interaktivem Rebase</h2>
+    <pre><code>git rebase -i main</code></pre>
+    <p>Andern Sie <code>pick</code> in <code>squash</code> oder <code>fixup</code>.</p>
+    <h2>Autosquash-Workflow</h2>
+    <pre><code>git commit --fixup=&lt;sha&gt;
+    git commit --squash=&lt;sha&gt;
+    git rebase -i --autosquash main</code></pre>
+    <h2>Fur Klarheit umordnen</h2>
+    <p>Wahrend des interaktiven Rebase Zeilen tauschen, um Commits umzuordnen.</p>
+    <h2>Zu grosse Commits aufteilen</h2>
+    <pre><code>git reset HEAD^
+    git add -p src/parser.c
+    git commit -m "Refactor parser"
+    git add -p src/runtime.c
+    git commit -m "Refactor runtime"
+    git rebase --continue</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Squash uber einen Merge hinweg kondensiert zwei Branches in einen Mega-Commit.</p>
+    <h2>Autoren erhalten</h2>
+    <pre><code>git commit -m "Add feature X
+
+    Co-authored-by: Alice &lt;alice@example.com&gt;
+    Co-authored-by: Bob &lt;bob@example.com&gt;"</code></pre>
+
+- source_title: "Rerere: automatic conflict resolution reuse"
+  title: "Rerere: automatische Wiederverwendung von Konfliktlosungen"
+  langcode: de
+  body: |
+    <h2>Was rerere tut</h2>
+    <p>Rerere — "reuse recorded resolution" — beobachtet das Losen eines Merge-Konflikts, zeichnet die Auflosung auf und spielt sie das nachste Mal ab, wenn derselbe Konflikt erscheint. Unschatzbar fur lange laufende Branches, die wiederholt rebasen oder mergen.</p>
+    <h2>Aktivieren</h2>
+    <pre><code>git config --global rerere.enabled true
+    git config --global rerere.autoupdate true</code></pre>
+    <h2>Wie es funktioniert</h2>
+    <p>Beim Konflikt speichert Git einen Hash des Konfliktkontexts unter <code>.git/rr-cache/</code>.</p>
+    <h2>Status inspizieren</h2>
+    <pre><code>git rerere status
+    git rerere diff
+    git rerere remaining</code></pre>
+    <h2>Schlechte Auflosung vergessen</h2>
+    <pre><code>git rerere forget path/to/file</code></pre>
+    <h2>Anwendungsfall: Rebase-Sturme</h2>
+    <p>Sie pflegen einen langen Feature-Branch und rebasen wochentlich gegen main. Dieselben Konflikte in <code>CHANGELOG.md</code> erscheinen jedes Mal.</p>
+    <h2>Anwendungsfall: Integrations-Branch</h2>
+    <p>Einige Teams pflegen einen "integration"-Branch, der nachts alle Feature-Branches re-merged.</p>
+    <h2>Haufige Fehler</h2>
+    <p>rerere blind vertrauen: immer mit <code>git diff --staged</code> inspizieren, bevor committet wird.</p>
+    <h2>rerere aus Historie trainieren</h2>
+    <pre><code>git rev-list --merges main | while read merge; do
+      git checkout "$merge^"
+      git merge "$merge^2" || git rerere
+      git reset --hard
+    done</code></pre>
+
+- source_title: "Git hooks: pre-commit, prepare-commit-msg, commit-msg"
+  title: "Git-Hooks: pre-commit, prepare-commit-msg, commit-msg"
+  langcode: de
+  body: |
+    <h2>Client-seitige Hooks</h2>
+    <p>Hooks sind ausfuhrbare Skripte in <code>.git/hooks/</code>. Git ruft sie zu wohldefinierten Zeitpunkten auf. Die drei Commit-Zeit-Hooks ermoglichen die Durchsetzung von Richtlinien, bevor ein Commit finalisiert wird.</p>
+    <h2>pre-commit</h2>
+    <pre><code>#!/usr/bin/env bash
+    set -e
+    files=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.py$' || true)
+    [ -z "$files" ] &amp;&amp; exit 0
+    ruff check $files
+    ruff format --check $files</code></pre>
+    <h2>prepare-commit-msg</h2>
+    <pre><code>#!/usr/bin/env bash
+    MSG_FILE=$1
+    SOURCE=$2
+    [ "$SOURCE" = "message" ] &amp;&amp; exit 0
+    branch=$(git symbolic-ref --short HEAD)
+    ticket=$(echo "$branch" | grep -oE '[A-Z]+-[0-9]+' || true)
+    [ -n "$ticket" ] &amp;&amp; sed -i.bak "1s/^/[$ticket] /" "$MSG_FILE"</code></pre>
+    <h2>commit-msg</h2>
+    <pre><code>#!/usr/bin/env bash
+    pattern='^(feat|fix|docs|refactor|test|chore)(\(.+\))?: .{1,72}'
+    grep -qE "$pattern" "$1" || {
+      echo "Commit message must follow Conventional Commits."
+      exit 1
+    }</code></pre>
+    <h2>Hooks im Team teilen</h2>
+    <pre><code>git config core.hooksPath .githooks</code></pre>
+    <h2>Umgehen</h2>
+    <p><code>--no-verify</code> ubergeben, um pre-commit und commit-msg zu uberspringen. Nur fur Notfalle.</p>
+    <h2>Haufige Fehler</h2>
+    <p>Langsame Hooks frustrieren Entwickler und werden umgangen.</p>
+
+- source_title: "Git hooks: post-commit, post-receive, pre-push"
+  title: "Git-Hooks: post-commit, post-receive, pre-push"
+  langcode: de
+  body: |
+    <h2>Nach den Tatsachen</h2>
+    <p>Wo Commit-Zeit-Hooks Commits formen, reagieren die Hooks auf dieser Seite auf sie. <code>post-commit</code> lauft lokal nach jedem Commit, <code>pre-push</code> lauft vor Datentransfer zum Remote, und <code>post-receive</code> lauft auf dem Server nachdem ein Push gelandet ist.</p>
+    <h2>post-commit</h2>
+    <pre><code>#!/usr/bin/env bash
+    ctags -R --languages=python -f .tags &amp; disown
+    notify-send "Committed: $(git log -1 --format=%s)"</code></pre>
+    <h2>pre-push</h2>
+    <pre><code>#!/usr/bin/env bash
+    remote="$1"
+    url="$2"
+    while read local_ref local_sha remote_ref remote_sha; do
+      if [ "$remote_ref" = "refs/heads/main" ]; then
+        if ! cargo test --quiet; then
+          echo "Tests fail; refusing to push to main."
+          exit 1
+        fi
+      fi
+    done</code></pre>
+    <h2>post-receive (server-seitig)</h2>
+    <pre><code>#!/usr/bin/env bash
+    while read oldrev newrev refname; do
+      branch=${refname#refs/heads/}
+      if [ "$branch" = "main" ]; then
+        GIT_WORK_TREE=/var/www/site git checkout -f main
+        curl -X POST https://chat.example/notify \
+          -d "Deployed $newrev to production"
+      fi
+    done</code></pre>
+    <h2>Andere Server-Hooks</h2>
+    <p><code>pre-receive</code> lauft einmal pro Push und kann den gesamten Push ablehnen. <code>update</code> lauft einmal pro Ref.</p>
+    <h2>Hook-Verkettung</h2>
+    <pre><code>#!/usr/bin/env bash
+    for hook in .githooks/post-commit.d/*; do
+      [ -x "$hook" ] &amp;&amp; "$hook" "$@" || exit $?
+    done</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>post-commit kann einen Commit nicht verhindern; keine Validierung dort einbauen.</p>
+    <h2>Debugging</h2>
+    <pre><code>exec &gt;&gt; /tmp/git-hook.log 2&gt;&amp;1
+    set -x</code></pre>
+
+- source_title: "Custom merge strategies and drivers"
+  title: "Benutzerdefinierte Merge-Strategien und Treiber"
+  langcode: de
+  body: |
+    <h2>Strategien vs Treiber</h2>
+    <p>Eine Merge-<em>Strategie</em> entscheidet, wie Git zwei Historien kombiniert — <code>ort</code> (Standard ab Git 2.34), <code>recursive</code>, <code>resolve</code>, <code>octopus</code> und <code>ours</code>. Ein Merge-<em>Treiber</em> ist datei-spezifische Logik, die lauft, wenn beide Seiten dieselbe Datei geandert haben.</p>
+    <h2>Strategie wahlen</h2>
+    <pre><code>git merge -s ort feature
+    git merge -s ours legacy-branch
+    git merge -s octopus a b c d</code></pre>
+    <h2>Strategie-Optionen</h2>
+    <pre><code>git merge -X theirs feature
+    git merge -X ignore-all-space main
+    git merge -X renormalize legacy</code></pre>
+    <h2>Benutzerdefinierte Treiber</h2>
+    <pre><code>[merge "ours-only"]
+    name = Always keep our version
+    driver = true</code></pre>
+    <pre><code>CHANGELOG.md merge=ours-only
+    *.lock merge=union</code></pre>
+    <h2>Realer Treiber: yarn.lock</h2>
+    <pre><code>[merge "yarn-lock"]
+    name = Re-run yarn install
+    driver = "yarn install --silent &amp;&amp; git add yarn.lock"</code></pre>
+    <h2>Treiber-Vertrag</h2>
+    <p>Treiber-Skripte erhalten Platzhalter: <code>%O</code> Vorfahre, <code>%A</code> unsere (Ergebnis hier schreiben), <code>%B</code> ihre, <code>%P</code> Pfad, <code>%L</code> Markergrosse.</p>
+    <h2>Haufige Fehler</h2>
+    <p>Vergessen, dass Treiber auf jedem Klon installiert werden mussen — nur <code>.gitattributes</code> wird geteilt.</p>
+
+- source_title: "Custom diff drivers with gitattributes"
+  title: "Benutzerdefinierte Diff-Treiber mit gitattributes"
+  langcode: de
+  body: |
+    <h2>Warum benutzerdefinierte Diffs</h2>
+    <p>Git's Standard-Diff ist Zeile fur Zeile auf Text. Fur binare Formate (PDF, DOCX, Bilder) und strukturierten Text, bei dem Zeilen-Diffs nicht hilfreich sind, produzieren benutzerdefinierte Diff-Treiber etwas, das Menschen lesen konnen.</p>
+    <h2>Eingebaute Sprachtreiber</h2>
+    <pre><code># .gitattributes
+    *.py    diff=python
+    *.rs    diff=rust
+    *.go    diff=golang</code></pre>
+    <h2>Benutzerdefinierten Treiber definieren</h2>
+    <pre><code>[diff "exif"]
+    textconv = exiftool
+    cachetextconv = true</code></pre>
+    <pre><code>*.jpg diff=exif
+    *.png diff=exif</code></pre>
+    <h2>Wort-Diff fur Prosa</h2>
+    <pre><code>[diff "tex"]
+    wordRegex = "[^[:space:]\\\\]+"</code></pre>
+    <h2>Binar-Erkennung uberschreiben</h2>
+    <pre><code>*.svg   diff
+    *.pdf   -diff
+    *.bin   binary</code></pre>
+    <h2>Reales Beispiel: SQL-Dumps</h2>
+    <pre><code>[diff "sqldump"]
+    textconv = "sed 's/^INSERT INTO/\\nINSERT INTO/g'"</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Treiber in <code>~/.gitconfig</code> sind lokal — Kollegen sehen kein Diff.</p>
+    <h2>Vollstandig externer Diff</h2>
+    <pre><code>GIT_EXTERNAL_DIFF=meld git diff
+    git config diff.tool meld
+    git difftool</code></pre>
+
+- source_title: "Gitattributes: line endings, exports, and encoding"
+  title: "Gitattributes: Zeilenumbruche, Exports und Kodierung"
+  langcode: de
+  body: |
+    <h2>Was gitattributes tut</h2>
+    <p><code>.gitattributes</code> wendet Pfad-Einstellungen an: Zeilenumbruche, Diff- und Merge-Treiber, Export-Filter, Kodierungsdeklarationen und Merge-Verhalten.</p>
+    <h2>Zeilenumbruche</h2>
+    <pre><code># .gitattributes
+    * text=auto
+    *.sh text eol=lf
+    *.bat text eol=crlf
+    *.png binary</code></pre>
+    <p>Nach dem Hinzufugen <code>git add --renormalize .</code> ausfuhren.</p>
+    <h2>core.autocrlf vs gitattributes</h2>
+    <p><code>core.autocrlf</code> ist Pro-Entwickler-Fallback. Gitattributes ist autoritativ und geteilt.</p>
+    <h2>Export-ignore</h2>
+    <pre><code>tests/      export-ignore
+    .github/    export-ignore
+    .gitignore  export-ignore
+    Makefile    export-ignore</code></pre>
+    <h2>Export-subst</h2>
+    <pre><code>VERSION export-subst</code></pre>
+    <h2>Working-Tree-Kodierung</h2>
+    <pre><code>*.cs working-tree-encoding=UTF-16LE-BOM
+    *.txt working-tree-encoding=Shift_JIS</code></pre>
+    <h2>Filter-Treiber</h2>
+    <pre><code>[filter "redact"]
+    clean  = sed 's/SECRET=.*/SECRET=***REDACTED***/'
+    smudge = cat
+    *.env filter=redact</code></pre>
+    <h2>Makros</h2>
+    <pre><code>[attr]docfile diff=markdown export-ignore
+    README.md docfile</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p><code>* text=auto</code> hinzufugen ohne Renormalisierung lasst gemischte Zeilenumbruche im Repo.</p>
+
+- source_title: "GPG signing commits and tags"
+  title: "Commits und Tags mit GPG signieren"
+  langcode: de
+  body: |
+    <h2>Warum signieren</h2>
+    <p>Ein signierter Commit bezeugt kryptographisch "dieser Commit wurde vom Inhaber dieses Schlussels verfasst, unverandert seit der Signatur".</p>
+    <h2>Einmalige Einrichtung</h2>
+    <pre><code>gpg --full-generate-key
+    gpg --list-secret-keys --keyid-format=long
+    git config --global user.signingkey 0xABCDEF1234567890
+    git config --global commit.gpgsign true
+    git config --global tag.gpgsign true</code></pre>
+    <pre><code>gpg --armor --export 0xABCDEF1234567890</code></pre>
+    <h2>Auf Anforderung signieren</h2>
+    <pre><code>git commit -S -m "Important change"
+    git tag -s v1.0.0 -m "Release 1.0.0"</code></pre>
+    <pre><code>git log --show-signature
+    git verify-commit &lt;sha&gt;
+    git verify-tag v1.0.0</code></pre>
+    <h2>GPG-Agent und Pinentry</h2>
+    <pre><code># ~/.gnupg/gpg-agent.conf
+    default-cache-ttl 28800
+    max-cache-ttl 86400
+    pinentry-program /usr/local/bin/pinentry-mac</code></pre>
+    <h2>Hardware-Schlussel</h2>
+    <p>YubiKey oder ahnliche Token konnen den GPG-Signierschlussel halten und einen Touch pro Commit verlangen.</p>
+    <h2>Haufige Fehler</h2>
+    <p><code>commit.gpgsign true</code> ohne funktionierenden Agent setzen lasst jeden <code>git commit</code> an einem hangenden Pinentry hangen.</p>
+    <h2>Remote-Push verifizieren</h2>
+    <pre><code>git push --signed</code></pre>
+
+- source_title: "SSH signing (Git 2.34+)"
+  title: "SSH-Signierung (Git 2.34+)"
+  langcode: de
+  body: |
+    <h2>Der Fall fur SSH-Signierung</h2>
+    <p>GPG ist machtig, aber operativ schmerzhaft. Seit Git 2.34 konnen Sie Commits und Tags mit den SSH-Schlusseln signieren, die Sie bereits zum Pushen verwenden.</p>
+    <h2>Einrichtung</h2>
+    <pre><code>git config --global gpg.format ssh
+    git config --global user.signingkey ~/.ssh/id_ed25519.pub
+    git config --global commit.gpgsign true
+    git config --global tag.gpgsign true</code></pre>
+    <h2>Allowed-Signers-Datei</h2>
+    <pre><code>cat &gt; ~/.config/git/allowed_signers &lt;&lt;EOF
+    alice@example.com ssh-ed25519 AAAA... alice
+    bob@example.com   ssh-ed25519 AAAA... bob
+    EOF
+    git config --global gpg.ssh.allowedSignersFile ~/.config/git/allowed_signers</code></pre>
+    <h2>Verifizieren</h2>
+    <pre><code>git log --show-signature
+    git verify-commit HEAD
+    git verify-tag v1.0.0</code></pre>
+    <h2>Hardware-gestutzte Schlussel</h2>
+    <p>OpenSSH unterstutzt FIDO/U2F-Schlussel (<code>ssh-keygen -t ed25519-sk</code>).</p>
+    <h2>Widerruf</h2>
+    <pre><code>git config --global gpg.ssh.revocationFile ~/.config/git/revoked_keys</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Nicht ubereinstimmende E-Mail zwischen Commit-Autor und allowed-signers-Eintrag.</p>
+    <h2>Gemischte Umgebungen</h2>
+    <p>SSH-signierte und GPG-signierte Commits konnen in einem Repo koexistieren.</p>
+
+- source_title: "Worktrees: multiple checkouts of one repo"
+  title: "Worktrees: mehrere Checkouts eines Repos"
+  langcode: de
+  body: |
+    <h2>Das Problem, das Worktrees losen</h2>
+    <p>Sie sind mitten in einem Feature, als ein dringender Hotfix-Request eintrifft. Stash oder Kontextwechsel sind riskant und langsam. Worktrees ermoglichen das Auschecken zusatzlicher Branches in separate Verzeichnisse, alle teilen eine zugrunde liegende Objektdatenbank.</p>
+    <h2>Worktree hinzufugen</h2>
+    <pre><code>git worktree add ../hotfix main
+    cd ../hotfix
+    git checkout -b hotfix/urgent
+    cd -
+    git worktree remove ../hotfix</code></pre>
+    <h2>Auflisten und prunen</h2>
+    <pre><code>git worktree list
+    git worktree list --porcelain
+    git worktree prune
+    git worktree remove ../old-feature
+    git worktree lock ../release
+    git worktree unlock ../release</code></pre>
+    <h2>Detached Worktrees</h2>
+    <pre><code>git worktree add --detach ../v1.0 v1.0.0</code></pre>
+    <h2>Branch-Sharing-Regeln</h2>
+    <p>Derselbe Branch kann nicht in zwei Worktrees gleichzeitig ausgecheckt sein.</p>
+    <h2>Anwendungsfalle</h2>
+    <ul>
+      <li>Lang laufender CI-Build in einem Worktree, wahrend Sie weiter coden.</li>
+      <li>Side-by-side-Vergleich zweier Branches im Editor.</li>
+      <li>Bisect in einem Worktree, wahrend Ihr Haupt-Checkout still bleibt.</li>
+    </ul>
+    <h2>Konfiguration</h2>
+    <pre><code>git config --worktree user.email contractor@client.com</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Ein Worktree-Verzeichnis mit <code>rm -rf</code> entfernen statt <code>git worktree remove</code>.</p>
+
+- source_title: "Git internals: the object database"
+  title: "Git-Internals: die Objektdatenbank"
+  langcode: de
+  body: |
+    <h2>Vier Objekttypen</h2>
+    <p>Git speichert alles als content-addressable Objekte unter <code>.git/objects</code>. Es gibt vier Typen: <em>blob</em> (Dateiinhalte), <em>tree</em> (Verzeichniseintrage von Blobs und Subtrees), <em>commit</em> (Snapshot-Zeiger mit Autor, Committer, Message und Eltern) und <em>tag</em> (annotierter Tag).</p>
+    <h2>Inspektion</h2>
+    <pre><code>git cat-file -t &lt;sha&gt;
+    git cat-file -p &lt;sha&gt;
+    git cat-file -s &lt;sha&gt;
+    git ls-tree HEAD
+    git rev-parse HEAD^{tree}</code></pre>
+    <h2>Loose vs packed</h2>
+    <p>Neu erstellte Objekte starten als loose: eine zlib-komprimierte Datei pro Objekt.</p>
+    <h2>Hashing</h2>
+    <pre><code>echo "hello" | git hash-object --stdin
+    git hash-object -w README.md</code></pre>
+    <h2>Trees kodieren Berechtigungen</h2>
+    <p>Modi: <code>040000</code> (Verzeichnis), <code>100644</code> (regular), <code>100755</code> (ausfuhrbar), <code>120000</code> (Symlink), <code>160000</code> (Gitlink/Submodul).</p>
+    <h2>Historie durchwandern</h2>
+    <pre><code>git log --raw
+    git log --pretty=raw
+    git rev-list --objects HEAD</code></pre>
+    <h2>Erreichbarkeit und Pruning</h2>
+    <pre><code>git fsck --unreachable
+    git gc --prune=now</code></pre>
+    <h2>SHA-256-Ubergang</h2>
+    <p>Modernes Git unterstutzt SHA-256-Repositories (<code>git init --object-format=sha256</code>).</p>
+    <h2>Haufige Fehler</h2>
+    <p>Dateien unter <code>.git/objects</code> direkt bearbeiten. Nicht tun.</p>
+
+- source_title: "Git internals: packfiles and delta compression"
+  title: "Git-Internals: Packfiles und Delta-Kompression"
+  langcode: de
+  body: |
+    <h2>Packfile-Grundlagen</h2>
+    <p>Ein Packfile bundelt viele Objekte in einer Datei mit Delta-Kompression — anstatt jede Version einer Datei vollstandig zu speichern, teilen sich ahnliche Objekte eine Basis und speichern nur die Differenz.</p>
+    <h2>Packs inspizieren</h2>
+    <pre><code>git verify-pack -v .git/objects/pack/pack-*.idx | head
+    git count-objects -v
+    git cat-file --batch-all-objects --batch-check='%(objectname) %(objecttype) %(objectsize:disk)'</code></pre>
+    <h2>Repacking</h2>
+    <pre><code>git repack -ad
+    git repack -adf --depth=50 --window=250
+    git repack --geometric=2 -d</code></pre>
+    <h2>Geometrisches Repacking</h2>
+    <p>Geometrisches Repacking (Git 2.32+) halt eine Reihe von Pack-Grossen in einem 1:N-Verhaltnis.</p>
+    <h2>Multi-pack-index</h2>
+    <pre><code>git multi-pack-index write
+    git multi-pack-index verify</code></pre>
+    <h2>Delta-Tuning</h2>
+    <pre><code>[pack]
+    windowMemory = 256m
+    threads = 0
+    deltaCacheSize = 256m</code></pre>
+    <h2>Erreichbarkeits-Bitmaps</h2>
+    <pre><code>git repack -adb</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Pack-Dateien manuell loschen — Git verfolgt sie in Metadaten.</p>
+
+- source_title: "Git internals: references and the reflog"
+  title: "Git-Internals: Referenzen und das Reflog"
+  langcode: de
+  body: |
+    <h2>Was ist eine Ref</h2>
+    <p>Eine Ref ist ein Name, der auf ein Objekt zeigt — meist auf einen Commit. Branches sind Refs unter <code>refs/heads/</code>, Tags unter <code>refs/tags/</code>, Remote-Tracking unter <code>refs/remotes/</code>, und Pseudo-Refs wie <code>HEAD</code>, <code>FETCH_HEAD</code>, <code>ORIG_HEAD</code>.</p>
+    <h2>Refs inspizieren</h2>
+    <pre><code>git for-each-ref
+    git for-each-ref --sort=-committerdate --format='%(refname:short) %(committerdate:relative)' refs/heads
+    git symbolic-ref HEAD
+    git update-ref refs/heads/foo &lt;sha&gt;</code></pre>
+    <h2>Das Reflog</h2>
+    <pre><code>git reflog
+    git reflog show feature
+    git reflog show HEAD@{2.weeks.ago}
+    git log -g --oneline</code></pre>
+    <pre><code>git checkout HEAD@{1}
+    git branch rescue HEAD@{5}</code></pre>
+    <h2>Reflog-Ablauf</h2>
+    <pre><code>git config gc.reflogExpire never
+    git config gc.reflogExpireUnreachable 60.days</code></pre>
+    <h2>Spezielle Pseudo-Refs</h2>
+    <p><code>HEAD</code>, <code>ORIG_HEAD</code>, <code>FETCH_HEAD</code>, <code>MERGE_HEAD</code>.</p>
+    <h2>Reftable-Backend</h2>
+    <pre><code>git init --ref-format=reftable</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Reflog ewig vertrauen: es lauft ab.</p>
+
+- source_title: "Git internals: the index format"
+  title: "Git-Internals: das Index-Format"
+  langcode: de
+  body: |
+    <h2>Der Staging-Bereich entmystifiziert</h2>
+    <p>Der <em>Index</em> (a.k.a. Cache, Staging-Bereich) lebt unter <code>.git/index</code> als Binardatei.</p>
+    <h2>Inspektion</h2>
+    <pre><code>git ls-files --stage
+    git ls-files --debug
+    git diff --cached
+    git diff</code></pre>
+    <h2>Index-Versionen</h2>
+    <pre><code>git config index.version 4
+    git update-index --index-version 4</code></pre>
+    <h2>Stat-Caching</h2>
+    <p>Der Index zeichnet device, inode, ctime, mtime, size fur jeden Eintrag auf.</p>
+    <h2>Sparse Index</h2>
+    <pre><code>git sparse-checkout init --cone
+    git sparse-checkout set apps/web libs/shared
+    git config core.sparseCheckoutCone true
+    git config index.sparse true</code></pre>
+    <h2>Drei-Wege-Merge im Index</h2>
+    <pre><code>git ls-files -u
+    git checkout-index --stage=2 -- file
+    git checkout-index --stage=3 -- file</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Glauben, dass <code>git add</code> Dateien "permanent" staged.</p>
+    <h2>Performance-Hebel</h2>
+    <p>Hebel: <code>index.version=4</code>, <code>core.untrackedCache=true</code>, <code>core.fsmonitor=true</code>, sparse index, <code>feature.manyFiles=true</code>.</p>
+
+- source_title: "Grafts and replace refs"
+  title: "Grafts und Replace-Refs"
+  langcode: de
+  body: |
+    <h2>Historie bearbeiten ohne sie umzuschreiben</h2>
+    <p>Manchmal mochten Sie Historien zusammenspleissen (z.B. einen konvertierten Subversion-Import, der eine Fortsetzung trifft) ohne Commits umzuschreiben.</p>
+    <h2>Grafts (Legacy)</h2>
+    <pre><code># .git/info/grafts
+    &lt;child-sha&gt; &lt;new-parent-sha&gt;</code></pre>
+    <h2>Replace-Refs</h2>
+    <pre><code>git replace --graft &lt;child&gt; &lt;new-parent&gt;
+    git replace --graft v3.0.0 v2.99.0
+    git replace --convert-graft-file
+    git replace -d &lt;sha&gt;
+    git replace -l</code></pre>
+    <h2>Anwendungsfall: Imports zusammenfugen</h2>
+    <pre><code>git replace --graft $(git rev-list --max-parents=0 main | head -1) svn-history-tip</code></pre>
+    <h2>Teilen</h2>
+    <pre><code>git push origin 'refs/replace/*:refs/replace/*'</code></pre>
+    <h2>Vorubergehend deaktivieren</h2>
+    <pre><code>git --no-replace-objects log
+    GIT_NO_REPLACE_OBJECTS=1 git log</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Replace mit Umschreiben verwechseln — Replace andert keine Objekt-SHAs.</p>
+
+- source_title: "Advanced git log: formatting, filtering, and graph"
+  title: "Erweitertes git log: Formatierung, Filter und Graph"
+  langcode: de
+  body: |
+    <h2>Jenseits der Standardausgabe</h2>
+    <p><code>git log</code> ist eine kleine Abfragesprache fur Ihre Historie.</p>
+    <h2>Pretty-Formate</h2>
+    <pre><code>git log --pretty=oneline
+    git log --pretty=fuller
+    git log --pretty=format:'%h %ad %an %s' --date=short
+    git log --pretty=format:'%C(yellow)%h%Creset %C(cyan)%ad%Creset %s %C(green)(%an)%Creset' --date=short</code></pre>
+    <pre><code>git config --global alias.lg "log --pretty=format:'%C(auto)%h %ad %s %d' --date=short --graph"</code></pre>
+    <h2>Graph-Ansicht</h2>
+    <pre><code>git log --graph --oneline --all --decorate
+    git log --graph --first-parent main</code></pre>
+    <h2>Filtern nach Inhalt</h2>
+    <pre><code>git log -S"FunctionName"
+    git log -G"regex.*pattern"
+    git log -L :myFunc:src/file.c
+    git log -L 100,150:src/file.c</code></pre>
+    <h2>Filtern nach Metadaten</h2>
+    <pre><code>git log --since=2.weeks --until=yesterday
+    git log --author='Alice'
+    git log --grep='hotfix' --grep='security' --all-match
+    git log --no-merges
+    git log --merges --first-parent main
+    git log --committer='@example.com'</code></pre>
+    <h2>Pfad-eingeschranktes Log</h2>
+    <pre><code>git log -- src/parser/
+    git log --diff-filter=D -- secrets.env
+    git log --follow -- src/old/path.go</code></pre>
+    <h2>Zahlen und Statistiken</h2>
+    <pre><code>git shortlog -sne
+    git log --stat
+    git log --shortstat
+    git log --numstat</code></pre>
+    <h2>Walks</h2>
+    <pre><code>git log --ancestry-path A..B
+    git log --boundary --left-right A...B
+    git log --reverse
+    git log --topo-order
+    git log --date-order</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p><code>--all</code> verwenden, wenn Sie <code>--branches</code> meinen.</p>
+    <h2>Range-diff fur Serien</h2>
+    <pre><code>git range-diff main..topic-v1 main..topic-v2</code></pre>
+
+- source_title: "The ORIG_HEAD, FETCH_HEAD, and other special refs"
+  title: "ORIG_HEAD, FETCH_HEAD und andere spezielle Refs"
+  langcode: de
+  body: |
+    <h2>Die unbesungenen Pseudo-Refs</h2>
+    <p>Neben <code>HEAD</code> pflegt Git einen kleinen Zoo automatisch aktualisierter Refs, die aufzeichnen, was gerade passiert ist.</p>
+    <h2>HEAD</h2>
+    <p>Zeigt auf den aktuellen Branch oder, wenn detached, direkt auf einen Commit-SHA.</p>
+    <h2>ORIG_HEAD</h2>
+    <p>Wird von destruktiven Operationen (<code>merge</code>, <code>rebase</code>, <code>reset</code>, <code>am</code>) auf den vorherigen Tip gesetzt.</p>
+    <pre><code>git reset --hard ORIG_HEAD</code></pre>
+    <h2>FETCH_HEAD</h2>
+    <pre><code>git fetch origin
+    git log HEAD..FETCH_HEAD
+    git diff HEAD FETCH_HEAD -- src/</code></pre>
+    <h2>MERGE_HEAD und CHERRY_PICK_HEAD</h2>
+    <pre><code>cat .git/MERGE_HEAD
+    git rev-parse --verify MERGE_HEAD &amp;&amp; echo "merge in progress"</code></pre>
+    <h2>REVERT_HEAD, BISECT_*</h2>
+    <p>Ahnliche Marker existieren fur revert (<code>REVERT_HEAD</code>), bisect, rebase und AM.</p>
+    <h2>Reflog-Selektoren</h2>
+    <pre><code>git reset --hard HEAD@{1}
+    git checkout @{-1}
+    git checkout -</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p><code>ORIG_HEAD</code> mit dem Reflog verwechseln.</p>
+    <h2>Praktischer Recovery-Flow</h2>
+    <pre><code>git reflog
+    git branch rescue HEAD@{14}
+    git reset --hard rescue</code></pre>
+
+- source_title: "Three-way diff and conflict resolution strategies"
+  title: "Drei-Wege-Diff und Konfliktauflosungsstrategien"
+  langcode: de
+  body: |
+    <h2>Was ist Drei-Wege</h2>
+    <p>Zwei-Wege-Diff zeigt, was sich zwischen zwei Versionen geandert hat. Drei-Wege-Diff berucksichtigt auch den gemeinsamen Vorfahren.</p>
+    <h2>Einen Konflikt inspizieren</h2>
+    <pre><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+    our version
+    =======
+    their version
+    &gt;&gt;&gt;&gt;&gt;&gt;&gt; feature</code></pre>
+    <pre><code>git config merge.conflictStyle diff3
+    git checkout --conflict=diff3 path/to/file</code></pre>
+    <h2>Index-Stages</h2>
+    <pre><code>git ls-files -u
+    git show :1:path
+    git show :2:path
+    git show :3:path</code></pre>
+    <h2>Strategien</h2>
+    <pre><code>git checkout --ours path/to/file
+    git checkout --theirs path/to/file
+    git checkout --merge path/to/file</code></pre>
+    <pre><code>git merge -X theirs feature
+    git merge -X ignore-all-space feature
+    git merge -X renormalize feature</code></pre>
+    <h2>Mergetool</h2>
+    <pre><code>git config merge.tool meld
+    git mergetool</code></pre>
+    <h2>Rekursiver Vorfahre (ort)</h2>
+    <p>Wenn zwei Branches mehrere Merge-Basen teilen, mergt die <code>ort</code>-Strategie (Standard ab Git 2.34) die Basen virtuell vorab.</p>
+    <h2>Haufige Fehler</h2>
+    <p>Annehmen, der Vorfahre in Konflikt-Markern entspricht Ihrem vorherigen Commit — es ist die Merge-Basis.</p>
+
+- source_title: "Merge conflict resolution in depth"
+  title: "Merge-Konfliktauflosung im Detail"
+  langcode: de
+  body: |
+    <h2>Ein Workflow, keine Panik</h2>
+    <p>Konflikte sind Routine. Der richtige Workflow verwandelt sie von einem Stress-Ereignis in eine Funf-Minuten-Aufgabe: inspizieren, entscheiden, bearbeiten, verifizieren, fortfahren.</p>
+    <h2>Schritt 1: inspizieren</h2>
+    <pre><code>git status
+    git diff --name-only --diff-filter=U
+    git log --merge -p path/to/file</code></pre>
+    <h2>Schritt 2: Strategie wahlen</h2>
+    <pre><code>git checkout --theirs assets/logo.png
+    git add assets/logo.png</code></pre>
+    <h2>Schritt 3: bearbeiten</h2>
+    <pre><code>git config --global merge.conflictStyle zdiff3
+    git diff --check</code></pre>
+    <h2>Schritt 4: verifizieren</h2>
+    <pre><code>cargo test
+    git add path/to/file
+    git status</code></pre>
+    <h2>Schritt 5: fortfahren</h2>
+    <pre><code>git merge --continue
+    git rebase --continue
+    git cherry-pick --continue</code></pre>
+    <pre><code>git merge --abort
+    git rebase --abort</code></pre>
+    <h2>Hilfreiche Werkzeuge</h2>
+    <ul>
+      <li><code>git mergetool</code> mit meld, kdiff3, p4merge, vimdiff, beyond compare, IntelliJ.</li>
+      <li><code>git rerere</code> zum Wiedergeben von Auflosungen.</li>
+      <li><code>git imerge</code> fur inkrementelles Mergen.</li>
+    </ul>
+    <h2>Muster</h2>
+    <p>Whitespace-Konflikte? <code>git merge -X ignore-all-space</code>. Wiederholte Changelog-Konflikte? <code>CHANGELOG.md merge=union</code>.</p>
+    <h2>Haufige Fehler</h2>
+    <p>Im Editor losen, ohne <code>git log --merge</code> zu inspizieren — das Warum geht verloren.</p>
+
+- source_title: "Generating and applying patches"
+  title: "Patches erzeugen und anwenden"
+  langcode: de
+  body: |
+    <h2>Warum Patches</h2>
+    <p>Patches sind portable Diffs, die Sie per E-Mail versenden, in einem Ticket einfugen oder als Datei speichern konnen.</p>
+    <h2>Mit diff und apply erzeugen</h2>
+    <pre><code>git diff &gt; change.patch
+    git diff main..feature &gt; series.patch
+    git diff --staged &gt; staged.patch
+    git apply change.patch
+    git apply --check change.patch
+    git apply --3way change.patch</code></pre>
+    <h2>Mit format-patch erzeugen</h2>
+    <pre><code>git format-patch -1 HEAD
+    git format-patch main
+    git format-patch -3 --cover-letter -o out/</code></pre>
+    <h2>Mit am anwenden</h2>
+    <pre><code>git am 0001-fix.patch
+    git am out/*.patch
+    git am --3way out/*.patch
+    git am --abort
+    git am --skip</code></pre>
+    <h2>Binare Patches</h2>
+    <pre><code>git diff --binary &gt; with-binaries.patch
+    git format-patch --binary -1</code></pre>
+    <h2>Stat-only oder Zusammenfassung</h2>
+    <pre><code>git diff --stat
+    git format-patch --stat=200 -1</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Mit <code>git diff</code> erzeugen, wenn Sie Metadaten brauchen.</p>
+    <h2>Range diff fur Review</h2>
+    <pre><code>git range-diff main..v1 main..v2</code></pre>
+
+- source_title: "Git am: applying mailbox patches"
+  title: "Git am: Mailbox-Patches anwenden"
+  langcode: de
+  body: |
+    <h2>Die Mailbox-Tradition</h2>
+    <p><code>git am</code> wendet Patches im mbox-Format an: das von mailing-list-getriebenen Projekten wie dem Linux-Kernel verwendete Format.</p>
+    <h2>Grundlegendes Anwenden</h2>
+    <pre><code>git am 0001-feature.patch
+    git am out/*.patch
+    git am --3way out/*.patch
+    git am --keep-cr</code></pre>
+    <h2>Aus Mail-Clients</h2>
+    <pre><code>cat /var/mail/inbox | git am</code></pre>
+    <h2>Signed-off-by</h2>
+    <pre><code>git am --signoff out/*.patch
+    git config format.signOff true</code></pre>
+    <h2>Direkt von URL</h2>
+    <pre><code>curl -sL https://lore.kernel.org/.../t.mbox.gz | gunzip | git am
+    b4 am https://lore.kernel.org/...</code></pre>
+    <h2>Reset-Verhalten</h2>
+    <pre><code>git am --abort
+    git am --skip
+    git am --continue</code></pre>
+    <h2>Whitespace-Behandlung</h2>
+    <pre><code>git am --whitespace=warn out/*.patch
+    git am --whitespace=fix out/*.patch
+    git am --ignore-whitespace out/*.patch</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Patches in falscher Reihenfolge anwenden — mbox-Dateien sind meist vornummeriert.</p>
+
+- source_title: "Maintaining a patch series with git format-patch"
+  title: "Eine Patch-Serie mit git format-patch pflegen"
+  langcode: de
+  body: |
+    <h2>Serien-getriebene Entwicklung</h2>
+    <p>Viele Projekte reviewen Patches per Serie, nicht per Branch. Sie veroffentlichen v1, erhalten Feedback, revidieren, senden v2.</p>
+    <h2>Eine Serie erzeugen</h2>
+    <pre><code>git format-patch -o out/v1 main
+    git format-patch -o out/v1 --cover-letter --thread main
+    git format-patch -o out/v1 --subject-prefix='PATCH v1' main</code></pre>
+    <h2>Senden</h2>
+    <pre><code>git send-email out/v1/*.patch \
+      --to=maintainer@example.com \
+      --cc=list@example.com</code></pre>
+    <pre><code>[sendemail]
+    smtpserver = smtp.example.com
+    smtpuser = you@example.com
+    smtpencryption = tls
+    smtpserverport = 587</code></pre>
+    <h2>Iteration</h2>
+    <pre><code>git format-patch -o out/v2 --subject-prefix='PATCH v2' \
+      --cover-letter --thread \
+      --in-reply-to=&lt;v1-message-id&gt; main</code></pre>
+    <pre><code>git range-diff main..v1 main..HEAD</code></pre>
+    <h2>Reroll-Prefix</h2>
+    <pre><code>git format-patch -v3 -o out/v3 main</code></pre>
+    <h2>Acks verfolgen</h2>
+    <pre><code>git interpret-trailers --in-place --trailer 'Reviewed-by: Alice &lt;a@x&gt;' &lt;commit&gt;</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p><code>--in-reply-to</code> bei Rerolls vergessen — die neue Serie wird nicht unter der alten gethreadet.</p>
+
+- source_title: "Git range-diff: comparing revision series"
+  title: "Git range-diff: Revisionsserien vergleichen"
+  langcode: de
+  body: |
+    <h2>Diffs diffen</h2>
+    <p><code>git range-diff</code> (eingefuhrt in Git 2.19) vergleicht zwei Bereiche von Commits, paart sie nach Ahnlichkeit und zeigt die Inter-Versions-Anderungen.</p>
+    <h2>Grundlegender Aufruf</h2>
+    <pre><code>git range-diff main..topic-v1 main..topic-v2
+    git range-diff topic-v1...topic-v2
+    git range-diff origin/main...HEAD</code></pre>
+    <h2>Ausgabe lesen</h2>
+    <ul>
+      <li><code>=</code> Commit unverandert.</li>
+      <li><code>!</code> Commit modifiziert — gefolgt vom Inter-Diff.</li>
+      <li><code>&lt;</code> Commit nur im ersten Range.</li>
+      <li><code>&gt;</code> Commit nur im zweiten Range.</li>
+    </ul>
+    <h2>Praktische Verwendung: Pre-Merge-Review</h2>
+    <pre><code>git range-diff @{u}...HEAD</code></pre>
+    <h2>In Cover Letters</h2>
+    <pre><code>git range-diff main..topic-v1 main..topic-v2 &gt;&gt; out/v2/0000-cover-letter.patch</code></pre>
+    <h2>Tuning</h2>
+    <pre><code>git range-diff --creation-factor=70 main..a main..b
+    git range-diff --no-color-moved main..a main..b
+    git range-diff --left-only main..a main..b</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Uber verschiedene Basen vergleichen, ohne es zu merken.</p>
+
+- source_title: "Git notes: attaching metadata to commits"
+  title: "Git Notes: Metadaten an Commits anhangen"
+  langcode: de
+  body: |
+    <h2>Notes ohne Umschreiben</h2>
+    <p><code>git notes</code> hangt beliebige Metadaten an existierende Commits an, ohne ihre SHAs zu andern. Reviews, Build-Status, Sign-offs, Performance-Metriken.</p>
+    <h2>Hinzufugen und Bearbeiten</h2>
+    <pre><code>git notes add -m "Reviewed by team Phoenix" &lt;sha&gt;
+    git notes append -m "QA passed" &lt;sha&gt;
+    git notes edit &lt;sha&gt;
+    git notes show &lt;sha&gt;
+    git notes remove &lt;sha&gt;</code></pre>
+    <h2>Namespaces verwenden</h2>
+    <pre><code>git notes --ref=builds add -m "build #1234 OK" &lt;sha&gt;
+    git notes --ref=reviews add -m "LGTM" &lt;sha&gt;
+    git config notes.displayRef "refs/notes/*"</code></pre>
+    <h2>Im Log anzeigen</h2>
+    <pre><code>git log --notes
+    git log --show-notes=builds
+    git log --pretty=format:'%h %s%n%N' --notes</code></pre>
+    <h2>Notes teilen</h2>
+    <pre><code>git config --add remote.origin.fetch '+refs/notes/*:refs/notes/*'
+    git fetch
+    git push origin 'refs/notes/*'</code></pre>
+    <h2>Anwendungsfall: CI-Annotationen</h2>
+    <pre><code>git notes --ref=ci add -m "duration=312s status=pass coverage=87%" &lt;sha&gt;
+    git push origin refs/notes/ci</code></pre>
+    <h2>Notes mergen</h2>
+    <pre><code>git notes merge -s union refs/notes/origin/commits</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Erwarten, dass Notes mit <code>git push</code> automatisch reisen — tun sie nicht.</p>
+
+- source_title: "Git archive and bundle for distribution"
+  title: "Git archive und bundle fur die Distribution"
+  langcode: de
+  body: |
+    <h2>Zwei Formate, zwei Zwecke</h2>
+    <p><code>git archive</code> erzeugt einen tar- oder zip-Snapshot eines Trees — Code ohne Historie. <code>git bundle</code> erzeugt eine portable Transportdatei, die Objekte und Refs enthalt — perfekt fur Offline-Transfer.</p>
+    <h2>Archive-Beispiele</h2>
+    <pre><code>git archive --format=tar.gz -o release-1.0.tar.gz v1.0.0
+    git archive --format=zip --prefix=myapp-1.0/ -o myapp-1.0.zip HEAD
+    git archive --format=tar HEAD src/ | tar -xC /tmp/snapshot</code></pre>
+    <h2>Dateien aus Archives ausschliessen</h2>
+    <pre><code>tests/      export-ignore
+    .github/    export-ignore
+    *.dev.json  export-ignore</code></pre>
+    <h2>Bundle fur Offline-Transfer</h2>
+    <pre><code>git bundle create repo.bundle --all
+    git bundle create incr.bundle main ^origin/main
+    git bundle verify repo.bundle
+    git clone repo.bundle myrepo
+    git fetch repo.bundle main:imported</code></pre>
+    <h2>Anwendungsfall: an embargoed Kunden senden</h2>
+    <pre><code>git bundle create v1.2.bundle main --tags
+    git fetch v1.2.bundle '+refs/heads/*:refs/remotes/upstream/*' '+refs/tags/*:refs/tags/*'</code></pre>
+    <h2>Reproduzierbare Archives</h2>
+    <pre><code>git archive --format=tar.gz \
+      --output=src.tar.gz \
+      --prefix=src/ HEAD</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p><code>git archive</code> (keine Historie) mit <code>git bundle</code> (volle Historie) verwechseln.</p>
+
+- source_title: "Advanced stash usage"
+  title: "Fortgeschrittene Stash-Verwendung"
+  langcode: de
+  body: |
+    <h2>Jenseits von git stash pop</h2>
+    <p>Stash kann mehr als das save/pop, das man normalerweise sieht. Gut verwendet ist es ein personlicher Notizblock fur Kontextwechsel, der das Committen von WIP in den Branch schlagt.</p>
+    <h2>Mit Absicht speichern</h2>
+    <pre><code>git stash push -m "WIP: parser refactor"
+    git stash push -m "config tweaks" -- src/config/
+    git stash push -k -m "without staged"
+    git stash push -u -m "include untracked"
+    git stash push -a -m "include ignored"</code></pre>
+    <h2>Auflisten und inspizieren</h2>
+    <pre><code>git stash list
+    git stash show stash@{2}
+    git stash show -p stash@{2}
+    git diff stash@{0}^1 stash@{0}</code></pre>
+    <h2>Apply, pop, branch</h2>
+    <pre><code>git stash apply
+    git stash pop
+    git stash apply stash@{3}
+    git stash branch fix-bug stash@{1}</code></pre>
+    <h2>Partielles Stashen</h2>
+    <pre><code>git stash push -p</code></pre>
+    <h2>Konfliktauflosung</h2>
+    <pre><code>git stash apply
+    git stash pop --index</code></pre>
+    <h2>Aufraumen</h2>
+    <pre><code>git stash drop stash@{4}
+    git stash clear
+    git reflog show stash</code></pre>
+    <h2>Anwendungsfall: vor Review neu bauen</h2>
+    <pre><code>git stash push -u -m "feature WIP"
+    git checkout main &amp;&amp; git pull
+    git switch -c ci-fix
+    git checkout feature
+    git stash pop</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Mit nicht verfolgten Dateien stashen, aber ohne <code>-u</code>.</p>
+
+- source_title: "Sparse checkout: working with subsets of a large repo"
+  title: "Sparse Checkout: mit Teilmengen eines grossen Repos arbeiten"
+  langcode: de
+  body: |
+    <h2>Warum sparse</h2>
+    <p>Sparse Checkout fullt nur eine Teilmenge des Working Trees eines Repos, wahrend alle Metadaten und die Historie erhalten bleiben.</p>
+    <h2>Cone-Modus</h2>
+    <pre><code>git sparse-checkout init --cone
+    git sparse-checkout set apps/web libs/shared
+    git sparse-checkout add apps/admin
+    git sparse-checkout list</code></pre>
+    <h2>Non-Cone-Modus</h2>
+    <pre><code>git sparse-checkout init
+    cat &gt; .git/info/sparse-checkout &lt;&lt;'EOF'
+    /*
+    !/build/
+    !/legacy/
+    EOF
+    git read-tree -m -u HEAD</code></pre>
+    <h2>Sparse klonen</h2>
+    <pre><code>git clone --filter=blob:none --no-checkout https://example.com/big.git
+    cd big
+    git sparse-checkout init --cone
+    git sparse-checkout set apps/web
+    git checkout main</code></pre>
+    <h2>Index uberprufen</h2>
+    <pre><code>git ls-files -t | head
+    git update-index --skip-worktree path
+    git update-index --no-skip-worktree path</code></pre>
+    <h2>Deaktivieren</h2>
+    <pre><code>git sparse-checkout disable</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Dateien ausserhalb des Cone bearbeiten.</p>
+    <h2>Sparse Index</h2>
+    <pre><code>git sparse-checkout init --cone --sparse-index
+    git config index.sparse true</code></pre>
+
+- source_title: "Multiple remote workflows"
+  title: "Workflows mit mehreren Remotes"
+  langcode: de
+  body: |
+    <h2>Warum mehrere Remotes</h2>
+    <p>Reale Workflows beinhalten oft mehr als ein Remote: ein <code>origin</code> fur Ihren Fork, ein <code>upstream</code> fur das kanonische Repo, plus Mirror, Deploy-Ziele und Forks pro Umgebung.</p>
+    <h2>Remotes hinzufugen</h2>
+    <pre><code>git remote add origin git@github.com:you/fork.git
+    git remote add upstream https://github.com/org/repo.git
+    git remote add deploy git@deploy.example.com:app.git
+    git remote -v</code></pre>
+    <h2>Von allen abrufen</h2>
+    <pre><code>git fetch --all --prune
+    git remote update --prune
+    git fetch upstream main:main</code></pre>
+    <h2>Das Richtige tracken</h2>
+    <pre><code>git branch --set-upstream-to=origin/main main
+    git push -u origin feature
+    git config branch.feature.remote origin
+    git config branch.feature.merge refs/heads/feature</code></pre>
+    <h2>Verschiedene Push- und Pull-URLs</h2>
+    <pre><code>git remote set-url --push origin git@github.com:you/fork.git
+    git remote set-url origin https://github.com/you/fork.git</code></pre>
+    <h2>Mirroring</h2>
+    <pre><code>git remote add mirror --mirror=push git@gitlab.example.com:org/repo.git
+    git push mirror</code></pre>
+    <h2>Triangularer Workflow</h2>
+    <pre><code>git config remote.pushDefault origin
+    git config push.default current</code></pre>
+    <h2>Anmeldedaten pro Remote</h2>
+    <pre><code>[credential "https://github.com"]
+    helper = osxkeychain
+    [credential "https://gitlab.example.com"]
+    helper = !pass-git-helper</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Versehentlich zu <code>upstream</code> pushen, wenn <code>origin</code> gemeint war.</p>
+
+- source_title: "Git in a monorepo"
+  title: "Git in einem Monorepo"
+  langcode: de
+  body: |
+    <h2>Monorepo-Realitaten</h2>
+    <p>Ein Monorepo halt viele Projekte in einem Repository — bessere Refactors, atomare projektubergreifende Anderungen, ein einziger Abhangigkeitsgraph. Die Kosten: Skalierung.</p>
+    <h2>Der Performance-Stack</h2>
+    <ul>
+      <li><strong>Sparse Checkout (Cone-Modus)</strong>.</li>
+      <li><strong>Sparse Index</strong> (Git 2.37+).</li>
+      <li><strong>Partial Clone</strong>.</li>
+      <li><strong>Commit-Graph + Bloom-Filter</strong>.</li>
+      <li><strong>Fsmonitor</strong>.</li>
+      <li><strong>Background Maintenance</strong>.</li>
+    </ul>
+    <h2>One-Shot-Setup</h2>
+    <pre><code>git clone --filter=blob:none --sparse https://example.com/big.git
+    cd big
+    git sparse-checkout init --cone --sparse-index
+    git sparse-checkout set apps/web libs/ui
+    git config feature.manyFiles true
+    git config core.fsmonitor true
+    git config core.untrackedCache true
+    git maintenance start</code></pre>
+    <h2>CODEOWNERS und Branch-Schutz</h2>
+    <p>Monorepos verlassen sich auf Owner pro Verzeichnis.</p>
+    <h2>Pfad-bewusste CI</h2>
+    <pre><code>changed=$(git diff --name-only origin/main..HEAD | cut -d/ -f1 | sort -u)
+    for pkg in $changed; do
+      [ -f "$pkg/Makefile" ] &amp;&amp; make -C "$pkg" test
+    done</code></pre>
+    <h2>Tooling-Schicht</h2>
+    <p>Build-Orchestratoren (Bazel, Buck2, Pants, Nx, Turborepo) konsumieren das Diff und fuhren nur betroffene Targets erneut aus.</p>
+    <h2>Haufige Fehler</h2>
+    <p>Ein Monorepo wie ein kleines Repo behandeln und die Optimierungen uberspringen.</p>
+
+- source_title: "Contributing to open source with Git"
+  title: "Mit Git zu Open Source beitragen"
+  langcode: de
+  body: |
+    <h2>Das Fork-and-PR-Muster</h2>
+    <p>Die meisten Plattformen erwarten diesen Flow: Fork des Upstream-Repos, Klonen Ihres Forks, Branch fur die Anderung, Push, Pull Request offnen.</p>
+    <h2>Setup</h2>
+    <pre><code>git clone git@github.com:you/project.git
+    cd project
+    git remote add upstream https://github.com/org/project.git
+    git fetch upstream
+    git checkout -b fix/typo upstream/main</code></pre>
+    <h2>Aktuell bleiben</h2>
+    <pre><code>git fetch upstream
+    git rebase upstream/main
+    git push --force-with-lease origin fix/typo</code></pre>
+    <h2>Commits gestalten</h2>
+    <pre><code>git commit -s -m "fix(parser): handle empty input
+
+    Reject empty buffer with InvalidInput rather than panicking. Adds a
+    regression test in tests/parser/empty.rs.
+
+    Closes #1234"</code></pre>
+    <h2>Mailing-Liste-Projekte</h2>
+    <p>Fur Projekte wie Linux verwenden Sie <code>git format-patch</code> und <code>git send-email</code>.</p>
+    <h2>Feedback uberprufen</h2>
+    <pre><code>git commit --fixup=&lt;sha&gt;
+    git rebase -i --autosquash upstream/main
+    git push --force-with-lease</code></pre>
+    <h2>Sign-off und Trailer</h2>
+    <pre><code>git config --global format.signOff true
+    git commit --amend --no-edit --trailer 'Reviewed-by: Alice &lt;a@x&gt;'
+    git interpret-trailers --in-place --trailer 'Cc: maintainers@list' COMMIT_MSG</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Vom Fork-main verzweigen, wenn dieser Monate hinterherhinkt.</p>
+
+- source_title: "Advanced gitconfig techniques"
+  title: "Fortgeschrittene Gitconfig-Techniken"
+  langcode: de
+  body: |
+    <h2>Konfigurationsschichten</h2>
+    <p>Git liest Konfiguration aus mehreren Dateien in Reihenfolge: system, global (<code>~/.gitconfig</code>), local (<code>.git/config</code>), worktree und Befehlszeile (<code>-c</code>).</p>
+    <h2>Bedingte Includes</h2>
+    <pre><code>[includeIf "gitdir:~/work/"]
+    path = ~/.gitconfig.work
+    [includeIf "gitdir:~/personal/"]
+    path = ~/.gitconfig.personal
+    [includeIf "onbranch:release/*"]
+    path = ~/.gitconfig.release
+    [includeIf "hasconfig:remote.*.url:git@github.com:work-org/**"]
+    path = ~/.gitconfig.work</code></pre>
+    <h2>Komponierende Aliase</h2>
+    <pre><code>[alias]
+    co = checkout
+    cm = commit -v
+    st = status -sb
+    lg = log --graph --pretty=format:'%C(auto)%h %ad %s %d' --date=short
+    last = log -1 HEAD --stat
+    unstage = reset HEAD --
+    sync = "!f() { git fetch --all --prune &amp;&amp; git rebase --autostash @{u}; }; f"
+    publish = "!git push -u origin $(git symbolic-ref --short HEAD)"</code></pre>
+    <h2>URL-Umschreibung</h2>
+    <pre><code>[url "git@github.com:"]
+    insteadOf = https://github.com/
+    [url "https://github.com/"]
+    pushInsteadOf = git@github.com:</code></pre>
+    <h2>Konfiguration pro Worktree</h2>
+    <pre><code>git config extensions.worktreeConfig true
+    git config --worktree user.email contractor@client.com</code></pre>
+    <h2>Sinnvolle Standardwerte</h2>
+    <pre><code>[core]
+    autocrlf = input
+    fsmonitor = true
+    untrackedCache = true
+    [merge]
+    conflictStyle = zdiff3
+    ff = false
+    [pull]
+    rebase = true
+    [rebase]
+    autoSquash = true
+    autoStash = true
+    updateRefs = true
+    [push]
+    autoSetupRemote = true
+    default = current
+    [fetch]
+    prune = true
+    parallel = 0
+    [diff]
+    algorithm = histogram
+    colorMoved = default
+    submodule = log
+    [init]
+    defaultBranch = main
+    [advice]
+    detachedHead = false
+    [feature]
+    manyFiles = true</code></pre>
+    <h2>Inspektion</h2>
+    <pre><code>git config --list --show-origin
+    git config --get-all alias.lg
+    git config --show-scope user.email
+    git -c user.email=other@x commit -m "ad-hoc identity"</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Anmeldedaten in committeten Dateien setzen.</p>
+
+- source_title: "Why Git performance matters at scale"
+  title: "Warum Git-Performance bei Skalierung wichtig ist"
+  langcode: de
+  body: |
+    <h2>Lineare Werkzeuge, exponentielle Repos</h2>
+    <p>Git wurde ursprunglich fur den Linux-Kernel optimiert — gross fur die Standards von 2005, aber winzig fur die heutigen.</p>
+    <h2>Wo Zeit hingeht</h2>
+    <ul>
+      <li><code>git status</code> durchquert den Working Tree.</li>
+      <li><code>git log</code>, <code>git blame</code> durchqueren Commit-Graphen.</li>
+      <li><code>git fetch</code> verhandelt mit dem Server.</li>
+      <li><code>git gc</code> repackt jedes Objekt.</li>
+      <li>Der Index wird mehrfach pro Befehl gelesen und geschrieben.</li>
+    </ul>
+    <h2>Messen</h2>
+    <pre><code>GIT_TRACE2_PERF=1 git status
+    GIT_TRACE2_EVENT=/tmp/trace.json git status
+    git -c trace2.eventTarget=/tmp/trace git fetch</code></pre>
+    <h2>Performance-Toolbox</h2>
+    <ul>
+      <li><strong>commit-graph</strong>.</li>
+      <li><strong>changed-path Bloom-Filter</strong>.</li>
+      <li><strong>multi-pack-index</strong>.</li>
+      <li><strong>Erreichbarkeits-Bitmaps</strong>.</li>
+      <li><strong>fsmonitor</strong>.</li>
+      <li><strong>partial clone</strong> und <strong>sparse index</strong>.</li>
+      <li><strong>geometric repack</strong>.</li>
+      <li><strong>protocol v2</strong>.</li>
+      <li><strong>git maintenance</strong>.</li>
+    </ul>
+    <h2>Schnelle Erfolge</h2>
+    <pre><code>git config feature.manyFiles true
+    git config core.fsmonitor true
+    git config core.untrackedCache true
+    git config index.version 4
+    git maintenance start</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Vor dem Messen tunen.</p>
+
+- source_title: "Measuring Git performance with Trace2"
+  title: "Git-Performance mit Trace2 messen"
+  langcode: de
+  body: |
+    <h2>Die Trace2-Facility</h2>
+    <p>Trace2 (eingefuhrt in Git 2.22) ist die in Git eingebaute strukturierte Tracing-Facility.</p>
+    <h2>Drei Varianten</h2>
+    <ul>
+      <li><code>GIT_TRACE2</code>: menschenlesbarer Text.</li>
+      <li><code>GIT_TRACE2_PERF</code>: Text mit Timing-Spalten.</li>
+      <li><code>GIT_TRACE2_EVENT</code>: JSON, ein Ereignis pro Zeile.</li>
+    </ul>
+    <pre><code>GIT_TRACE2=1 git status
+    GIT_TRACE2_PERF=/tmp/perf.log git fetch
+    GIT_TRACE2_EVENT=/tmp/event.jsonl git log --oneline | head</code></pre>
+    <h2>Persistente Konfiguration</h2>
+    <pre><code>[trace2]
+    perfTarget = ~/git-trace/
+    eventTarget = ~/git-trace/
+    eventNesting = 4
+    maxFiles = 200</code></pre>
+    <h2>Das Perf-Format lesen</h2>
+    <pre><code>14:23:01.000 |  d0 | main         |  start  |  ... | git status
+    14:23:01.012 |  d0 | main         | region_enter |  | label:read_directory
+    14:23:01.220 |  d0 | main         | region_leave |  | label:read_directory
+    14:23:01.230 |  d0 | main         | exit         |  | code:0</code></pre>
+    <h2>JSON-Analyse</h2>
+    <pre><code>jq -c 'select(.event=="region_leave") | {label, t_rel}' /tmp/event.jsonl
+    jq -s 'group_by(.label) | map({label:.[0].label, total:(map(.t_rel) | add)})' /tmp/event.jsonl</code></pre>
+    <h2>Was zu messen ist</h2>
+    <ul>
+      <li><strong>git status</strong> auf einem frischen Checkout vs nach Aktivierung von fsmonitor.</li>
+      <li><strong>git log -- path</strong> mit und ohne changed-path Bloom-Filter.</li>
+      <li><strong>git fetch</strong> vor und nach MIDX und Erreichbarkeits-Bitmaps.</li>
+      <li><strong>git gc</strong> mit geometrischem vs vollstandigem Repack.</li>
+    </ul>
+    <h2>Haufige Fehler</h2>
+    <p>Nur eine Probe sammeln — Caches und warmes Dateisystem beeinflussen Zahlen drastisch.</p>
+
+- source_title: "The commit-graph: faster reachability queries"
+  title: "Der Commit-Graph: schnellere Erreichbarkeitsabfragen"
+  langcode: de
+  body: |
+    <h2>Der Erreichbarkeits-Engpass</h2>
+    <p>Viele Git-Operationen mussen "ist Commit X von Y aus erreichbar?" oder "welcher Commit ist die Merge-Basis?" beantworten. Die Commit-Graph-Datei berechnet Eltern-Zeiger, Generations-Nummern und (optional) Bloom-Filter in einer binaren Seitendatei vor.</p>
+    <h2>Wo sie lebt</h2>
+    <p>Alteres Git: <code>.git/objects/info/commit-graph</code>. Neueres Git: <code>.git/objects/info/commit-graphs/</code> (verkettet).</p>
+    <h2>Den Graphen schreiben</h2>
+    <pre><code>git commit-graph write --reachable --changed-paths
+    git commit-graph verify
+    git commit-graph write --split=replace --reachable --changed-paths</code></pre>
+    <h2>Auto-Schreiben</h2>
+    <pre><code>git config core.commitGraph true
+    git config gc.writeCommitGraph true
+    git config fetch.writeCommitGraph true</code></pre>
+    <h2>Generations-Nummern</h2>
+    <p>Jeder Commit erhalt eine topologische Generations-Nummer.</p>
+    <h2>Performance-Auswirkung</h2>
+    <p>Im Linux-Repo (uber eine Million Commits) sinkt <code>git log --oneline | head</code> von Sekunden auf Millisekunden.</p>
+    <h2>Messung</h2>
+    <pre><code>git -c core.commitGraph=false log -100 --pretty=oneline &gt;/dev/null
+    time git -c core.commitGraph=false log --oneline | head -10000 &gt;/dev/null
+    time git log --oneline | head -10000 &gt;/dev/null</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Vergessen, den Graphen nach einem grossen Push oder Rebase zu schreiben.</p>
+
+- source_title: "Changed-path Bloom filters in the commit-graph"
+  title: "Changed-path Bloom-Filter im Commit-Graph"
+  langcode: de
+  body: |
+    <h2>Das Problem des pfad-eingeschrankten Logs</h2>
+    <p><code>git log -- path/to/file</code> muss prinzipiell jeden Commit durchqueren und gegen seinen Vater diffen. Changed-path Bloom-Filter (Git 2.27+) beschleunigen dies dramatisch.</p>
+    <h2>Wie Bloom-Filter funktionieren</h2>
+    <p>Ein Bloom-Filter ist eine kleine Bitmap, die "definitiv nicht im Set" oder "wahrscheinlich im Set" fur Membership-Anfragen zuruckgibt.</p>
+    <h2>Aktivieren</h2>
+    <pre><code>git commit-graph write --reachable --changed-paths
+    git config commitGraph.changedPathsVersion 2
+    git maintenance run --task=commit-graph</code></pre>
+    <h2>Verifizieren</h2>
+    <pre><code>GIT_TRACE2_PERF=1 git log -- src/foo.c 2&gt;&amp;1 | grep -i bloom
+    git commit-graph verify</code></pre>
+    <h2>Wann es glanzt</h2>
+    <ul>
+      <li>Lange laufende Monorepos mit vielen Commits, die nur wenige Dateien beruhren.</li>
+      <li><code>git log -- src/specific/dir</code> Anfragen.</li>
+      <li><code>git blame</code> auf einzelnen Dateien.</li>
+    </ul>
+    <h2>Wann es nicht hilft</h2>
+    <ul>
+      <li>Glob/Regex-Pfade.</li>
+      <li>Logs ohne <code>--</code> Pfad-Argument.</li>
+      <li>Sehr kleine Repos.</li>
+    </ul>
+    <h2>Speicher und Disk</h2>
+    <pre><code>git config commitGraph.maxNewFilters 50000</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Den Graphen ohne <code>--changed-paths</code> schreiben.</p>
+
+- source_title: "Multi-pack-index (MIDX): unified pack object lookup"
+  title: "Multi-pack-index (MIDX): einheitliches Pack-Objekt-Lookup"
+  langcode: de
+  body: |
+    <h2>Das Viele-Packs-Problem</h2>
+    <p>Ein Repo mit vielen Packfiles muss in jedem suchen, um ein Objekt zu lokalisieren. Der Multi-pack-index (MIDX) konsolidiert alle Pack-Indizes in einer binaren Suche.</p>
+    <h2>Schreiben</h2>
+    <pre><code>git multi-pack-index write
+    git multi-pack-index verify
+    git multi-pack-index expire
+    git multi-pack-index repack --batch-size=2g</code></pre>
+    <h2>Konfiguration</h2>
+    <pre><code>git config core.multiPackIndex true
+    git config maintenance.multi-pack-index.enabled true</code></pre>
+    <h2>MIDX-Bitmap (Git 2.34+)</h2>
+    <pre><code>git multi-pack-index write --bitmap
+    git config repack.writeBitmaps true
+    git config pack.writeBitmaps true</code></pre>
+    <h2>Geometrische Integration</h2>
+    <p>MIDX glanzt gepaart mit geometrischem Repack.</p>
+    <h2>Verifikation</h2>
+    <pre><code>git multi-pack-index verify
+    git fsck --multi-pack-index
+    ls -la .git/objects/pack/multi-pack-index*</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Manuell Pack-Dateien loschen, die vom MIDX referenziert werden.</p>
+    <h2>Performance-Auswirkung</h2>
+    <p>Auf einem Repo mit 50+ Packs kann die Lookup-Zeit von Objekten um das 5-10-fache sinken.</p>
+
+- source_title: "Reachability bitmaps for fast set operations"
+  title: "Erreichbarkeits-Bitmaps fur schnelle Set-Operationen"
+  langcode: de
+  body: |
+    <h2>Das Set-Operations-Problem</h2>
+    <p>Operationen wie clone, fetch und gc mussen berechnen "welche Objekte sind von diesen Commits erreichbar?". Erreichbarkeits-Bitmaps speichern diese Antwort als komprimierte Bitmaps.</p>
+    <h2>Generierung</h2>
+    <pre><code>git repack -adb
+    git multi-pack-index write --bitmap
+    git config repack.writeBitmaps true
+    git config pack.writeBitmaps true</code></pre>
+    <h2>Wie Server sie verwenden</h2>
+    <p>Wenn ein Client klont, muss der Server alle erreichbaren Objekte aufzahlen. Mit Bitmaps ist das ein OR uber die Bitmaps aller Branch-Tips.</p>
+    <h2>Pseudo-Merge-Bitmaps (Git 2.45+)</h2>
+    <pre><code>git config pack.writeBitmapPseudoMergeStable true
+    git config repack.writeBitmapHashCache true</code></pre>
+    <h2>Verifikation</h2>
+    <pre><code>ls .git/objects/pack/*.bitmap
+    git rev-list --use-bitmap-index --count --all
+    git rev-list --test-bitmap HEAD</code></pre>
+    <h2>Server vs Client</h2>
+    <p>Bitmaps nutzen beiden Seiten, sind aber auf dem Server am wichtigsten.</p>
+    <h2>Haufige Fehler</h2>
+    <p>Bitmaps bei jedem gc auf kleinen Repos schreiben — Overhead kann den Nutzen ubersteigen.</p>
+    <h2>Reale Zahlen</h2>
+    <p>GitHub berichtete von 50-90% Reduktion der Klon-CPU nach Aktivierung von Bitmaps.</p>
+
+- source_title: "Geometric repacking strategy"
+  title: "Strategie des geometrischen Repackings"
+  langcode: de
+  body: |
+    <h2>Die Kosten des vollstandigen Repacks</h2>
+    <p>Traditionelles <code>git gc</code> fuhrt <code>git repack -ad</code> aus und schreibt alle Objekte in ein Packfile um. Auf einem Multi-Gigabyte-Repo sind das Stunden CPU und IO. Geometrisches Repacking (Git 2.32+) vermeidet dies.</p>
+    <h2>Wie es funktioniert</h2>
+    <p>Pack-Grossen bilden eine Sequenz, in der jeder Pack mindestens N-mal grosser ist als der nachstkleinere.</p>
+    <h2>Ausfuhrung</h2>
+    <pre><code>git repack --geometric=2 -d
+    git repack --geometric=2 -d --write-midx
+    git config maintenance.incremental-repack.enabled true</code></pre>
+    <h2>Paarung mit MIDX</h2>
+    <pre><code>git config core.multiPackIndex true
+    git multi-pack-index write
+    git multi-pack-index expire</code></pre>
+    <h2>Background Maintenance</h2>
+    <pre><code>git maintenance start
+    git maintenance run --task=incremental-repack</code></pre>
+    <h2>Wann vollstandiges Repack erzwingen</h2>
+    <pre><code>git repack -ad --depth=50 --window=250 --write-midx --write-bitmap-index</code></pre>
+    <h2>Server-seitige Uberlegungen</h2>
+    <p>Forge-Server (GitHub, GitLab, Gitea) verwenden geometrisches Repack im grossen Massstab.</p>
+    <h2>Haufige Fehler</h2>
+    <p>Geometrisches Repack ohne MIDX ausfuhren — Performance regressiert.</p>
+    <h2>Haufige Werte</h2>
+    <ul>
+      <li>Default <code>--geometric=2</code>: ausgewogen.</li>
+      <li><code>--geometric=4</code>: weniger, grossere Packs.</li>
+      <li><code>--geometric=1.5</code>: aggressivere Zusammenfuhrung.</li>
+    </ul>
+
+- source_title: "Git garbage collection: gc, prune, and pack-refs"
+  title: "Git-Garbage-Collection: gc, prune und pack-refs"
+  langcode: de
+  body: |
+    <h2>Was gc tut</h2>
+    <p><code>git gc</code> fuhrt Wartung durch: repackt loose Objekte, prunt unerreichbare uber die Ablauffenster hinaus, packt loose Refs in <code>packed-refs</code>, lasst Reflogs auslaufen und schreibt Commit-Graph und MIDX, wo konfiguriert.</p>
+    <h2>Auto-Trigger</h2>
+    <pre><code>[gc]
+    auto = 6700
+    autoPackLimit = 50
+    autoDetach = true
+    pruneExpire = 2.weeks.ago
+    reflogExpire = 90.days
+    reflogExpireUnreachable = 30.days</code></pre>
+    <h2>Manueller Aufruf</h2>
+    <pre><code>git gc
+    git gc --auto
+    git gc --aggressive
+    git gc --prune=now</code></pre>
+    <h2>Sicheres Pruning</h2>
+    <pre><code>git reflog expire --expire=now --all
+    git gc --prune=now</code></pre>
+    <h2>pack-refs</h2>
+    <pre><code>git pack-refs --all
+    git for-each-ref | wc -l
+    ls .git/refs/heads | wc -l</code></pre>
+    <h2>Background-Scheduling</h2>
+    <pre><code>git maintenance start
+    git maintenance run --task=gc
+    git maintenance run --task=loose-objects
+    git maintenance run --task=pack-refs</code></pre>
+    <h2>Aggressive vs Default</h2>
+    <p><code>--aggressive</code> verwendet Tiefe 250, Fenster 250.</p>
+    <h2>Haufige Fehler</h2>
+    <p>Auto-gc deaktivieren, um "CPU zu sparen", und mit Millionen loose Objekten enden.</p>
+
+- source_title: "Background maintenance: git maintenance run/start/stop"
+  title: "Background-Wartung: git maintenance run/start/stop"
+  langcode: de
+  body: |
+    <h2>Warum maintenance, nicht gc</h2>
+    <p><code>git maintenance</code> (Git 2.31+) ist der moderne, task-orientierte Ersatz fur <code>gc --auto</code>. Es fuhrt spezifische Tasks (commit-graph, prefetch, incremental-repack, loose-objects, pack-refs, gc) auf optimierten Schedules im Hintergrund aus.</p>
+    <h2>Starten</h2>
+    <pre><code>git maintenance start
+    git maintenance start --scheduler=systemd
+    git maintenance start --scheduler=launchctl
+    git maintenance start --scheduler=schtasks</code></pre>
+    <h2>Inspektion und Stoppen</h2>
+    <pre><code>git maintenance status
+    git maintenance stop
+    git maintenance unregister</code></pre>
+    <h2>Tasks und Schedules</h2>
+    <table>
+      <tr><th>Task</th><th>Default Schedule</th><th>Was es tut</th></tr>
+      <tr><td>commit-graph</td><td>stundlich</td><td>Aktualisiert den Commit-Graph</td></tr>
+      <tr><td>prefetch</td><td>stundlich</td><td>Fetcht in versteckte Refs</td></tr>
+      <tr><td>loose-objects</td><td>taglich</td><td>Packt loose Objekte</td></tr>
+      <tr><td>incremental-repack</td><td>taglich</td><td>Geometrisches Repack + MIDX</td></tr>
+      <tr><td>pack-refs</td><td>wochentlich</td><td>Packt loose Refs</td></tr>
+      <tr><td>gc</td><td>standardmassig aus</td><td>Vollstandiges gc</td></tr>
+    </table>
+    <h2>Manuelle Ausfuhrungen</h2>
+    <pre><code>git maintenance run --task=commit-graph
+    git maintenance run --task=incremental-repack
+    git maintenance run --auto</code></pre>
+    <h2>Konfiguration pro Task</h2>
+    <pre><code>[maintenance]
+    auto = false
+    strategy = incremental
+    [maintenance "commit-graph"]
+    enabled = true
+    [maintenance "incremental-repack"]
+    enabled = true
+    auto = 100
+    [maintenance "loose-objects"]
+    enabled = true
+    batchSize = 50</code></pre>
+    <h2>Auto-gc deaktivieren</h2>
+    <pre><code>git config gc.auto 0</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Vergessen, <code>git maintenance start</code> nach Klonen eines grossen Repos auszufuhren.</p>
+    <h2>Logs</h2>
+    <p>Auf systemd: <code>journalctl --user -u git-maintenance.service</code>. Auf macOS: <code>~/Library/Logs/git-maintenance.log</code>.</p>
+
+- source_title: "Fetch and push over large repositories"
+  title: "Fetch und Push uber grosse Repositories"
+  langcode: de
+  body: |
+    <h2>Zwei Enden eines Drahtes</h2>
+    <p>Die Performance von Fetch und Push hangt von der Verhandlungseffizienz, der Transfergrosse und der serverseitigen Berechnung ab.</p>
+    <h2>Protocol v2</h2>
+    <pre><code>GIT_TRACE_PACKET=1 git ls-remote origin 2&gt;&amp;1 | head -2
+    git config protocol.version 2</code></pre>
+    <h2>Verhandlungsalgorithmus</h2>
+    <pre><code>git config fetch.negotiationAlgorithm skipping
+    git config fetch.negotiationAlgorithm noop</code></pre>
+    <h2>Bundle-URIs</h2>
+    <pre><code>git clone --bundle-uri=https://cdn.example/repo.bundle https://example.com/repo.git
+    git config fetch.bundleURI https://cdn.example/repo.bundle</code></pre>
+    <h2>Paralleles Fetch</h2>
+    <pre><code>git config fetch.parallel 0
+    git config submodule.fetchJobs 8</code></pre>
+    <h2>Push-Optimierung</h2>
+    <pre><code>git config push.useBitmaps true
+    git config pack.useBitmaps true
+    git push --atomic origin main feature</code></pre>
+    <h2>Server-seitige Uberlegungen</h2>
+    <p>Server profitieren von MIDX, Erreichbarkeits-Bitmaps, geometrischem Repack und Commit-Graph genauso wie Clients.</p>
+    <h2>Shallow- und Partial-Clones</h2>
+    <pre><code>git clone --depth=1 https://example.com/repo.git
+    git clone --filter=blob:none https://example.com/repo.git
+    git clone --filter=tree:0 --no-checkout https://example.com/repo.git</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p><code>--depth=1</code> in CI verwenden und dann versuchen, zu bisecten.</p>
+
+- source_title: "Sparse checkout for monorepos"
+  title: "Sparse Checkout fur Monorepos"
+  langcode: de
+  body: |
+    <h2>Das Working-Set des Monorepos</h2>
+    <p>In einem Monorepo beruhren einzelne Entwickler normalerweise eine kleine Teilmenge — eine oder zwei Apps, eine Handvoll Bibliotheken.</p>
+    <h2>Cone-Modus-Setup</h2>
+    <pre><code>git sparse-checkout init --cone --sparse-index
+    git sparse-checkout set apps/web libs/ui libs/api
+    git sparse-checkout add apps/admin
+    git sparse-checkout list</code></pre>
+    <h2>Kombiniert mit Partial Clone</h2>
+    <pre><code>git clone --filter=blob:none --sparse https://example.com/big.git
+    cd big
+    git sparse-checkout init --cone --sparse-index
+    git sparse-checkout set apps/web</code></pre>
+    <h2>Neu konfigurieren</h2>
+    <pre><code>git sparse-checkout reapply
+    git sparse-checkout disable</code></pre>
+    <h2>CI-Verwendung</h2>
+    <pre><code>git clone --no-checkout --filter=blob:none "$REPO_URL" .
+    git sparse-checkout init --cone --sparse-index
+    git sparse-checkout set "$AFFECTED_DIR"
+    git checkout main</code></pre>
+    <h2>Editor- und IDE-Integration</h2>
+    <p>Die meisten Editoren respektieren Sparse Checkout transparent.</p>
+    <h2>Auditing</h2>
+    <pre><code>git sparse-checkout list
+    git ls-files -t | head
+    git update-index --no-skip-worktree path/file
+    du -sh .</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Den Non-Cone-Modus ohne guten Grund verwenden.</p>
+
+- source_title: "The sparse index: operating without a full index"
+  title: "Der Sparse Index: ohne vollstandigen Index arbeiten"
+  langcode: de
+  body: |
+    <h2>Warum der Index langsam ist</h2>
+    <p>Selbst bei Sparse Checkout enthalt der Index standardmassig einen Eintrag pro Datei im gesamten Repo. Der Sparse Index (Git 2.37+) ersetzt ausgeschlossene Verzeichnisse durch einen einzigen Tree-Eintrag.</p>
+    <h2>Aktivieren</h2>
+    <pre><code>git sparse-checkout init --cone --sparse-index
+    git config index.sparse true
+    git update-index --sparse</code></pre>
+    <h2>Wie es funktioniert</h2>
+    <p>Jedes ausgeschlossene Verzeichnis wird im Index als ein Eintrag mit Modus <code>040000</code> (Tree) reprasentiert.</p>
+    <h2>Inspektion</h2>
+    <pre><code>git ls-files --sparse | head
+    git ls-files -t | grep ^S | head
+    GIT_TRACE2_PERF=1 git status 2&gt;&amp;1 | grep sparse</code></pre>
+    <h2>Performance-Zahlen</h2>
+    <p>Auf einem realen Monorepo mit 4M Dateien berichtete das Microsoft-Office-Team von einem Ruckgang von <code>git status</code> von 3 Sekunden auf unter 200ms.</p>
+    <h2>Kompatibilitat</h2>
+    <p>Viele Befehle sind sparse-aware: status, add, commit, diff, checkout, reset, restore, stash, ls-files.</p>
+    <h2>Expansion erzwingen</h2>
+    <pre><code>git update-index --no-sparse
+    git update-index --sparse</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Versuchen, den Sparse Index im Non-Cone-Sparse-Checkout-Modus zu aktivieren.</p>
+
+- source_title: "Partial clone: promise and promisor remotes"
+  title: "Partial Clone: Promise- und Promisor-Remotes"
+  langcode: de
+  body: |
+    <h2>Faules Objekt-Fetching</h2>
+    <p>Partial Clone (<code>--filter</code>) ermoglicht es einem Klon, einige Objekte beim ersten Transfer wegzulassen und sie bei Bedarf nachzuladen.</p>
+    <h2>Filter-Specs</h2>
+    <pre><code>git clone --filter=blob:none url
+    git clone --filter=blob:limit=1m url
+    git clone --filter=tree:0 url
+    git clone --filter=sparse:oid=&lt;oid&gt; url</code></pre>
+    <h2>Wie das Fetching funktioniert</h2>
+    <pre><code>git rev-list --objects --missing=allow-promisor HEAD | \
+      awk '{print $1}' | git cat-file --batch-check
+    git fetch --refetch</code></pre>
+    <h2>Inspektion</h2>
+    <pre><code>git config --get-all remote.origin.partialclonefilter
+    git rev-list --missing=print HEAD | head
+    git config --get extensions.partialClone</code></pre>
+    <h2>Vorbehalte</h2>
+    <ul>
+      <li>Operationen wie <code>git log -p</code> uber die gesamte Historie konnen massive On-Demand-Fetches auslosen.</li>
+      <li>Disconnected-Verwendung ist begrenzt.</li>
+      <li>Server muss Partial Clone unterstutzen (Git 2.22+).</li>
+    </ul>
+    <h2>Server-Konfiguration</h2>
+    <pre><code>[uploadpack]
+    allowFilter = true
+    allowAnySHA1InWant = true</code></pre>
+    <h2>Mit Sparse kombinieren</h2>
+    <pre><code>git clone --filter=blob:none --sparse https://example.com/big.git
+    cd big
+    git sparse-checkout init --cone --sparse-index
+    git sparse-checkout set apps/web
+    git checkout main</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p><code>--filter=tree:0</code> fur Entwicklungsarbeit verwenden.</p>
+
+- source_title: "Filter specs: blob:none, tree:0, and combining filters"
+  title: "Filter-Specs: blob:none, tree:0 und Filterkombinationen"
+  langcode: de
+  body: |
+    <h2>Die Filter-Sprache</h2>
+    <p>Partial-Clone-Filter werden durch kurze DSL-Strings spezifiziert.</p>
+    <h2>Haufige Filter</h2>
+    <ul>
+      <li><code>blob:none</code> — alle Blobs weglassen.</li>
+      <li><code>blob:limit=&lt;n&gt;[kmg]</code>.</li>
+      <li><code>tree:&lt;depth&gt;</code>.</li>
+      <li><code>sparse:oid=&lt;blob&gt;</code>.</li>
+      <li><code>object:type=tag</code> (Git 2.36+).</li>
+      <li><code>combine:F1+F2+...</code>.</li>
+    </ul>
+    <h2>Beispiele</h2>
+    <pre><code>git clone --filter=blob:none url big-no-blobs
+    git clone --filter=blob:limit=10m url big-small-blobs
+    git clone --filter=tree:0 --no-checkout url history-only
+    git clone --filter=combine:blob:none+tree:0 url metadata-only</code></pre>
+    <h2>Filter wahlen</h2>
+    <table>
+      <tr><th>Anwendungsfall</th><th>Filter</th></tr>
+      <tr><td>Tagliche Entwicklung auf Teilmenge</td><td>blob:none + sparse-checkout</td></tr>
+      <tr><td>CI fur spezifische App</td><td>blob:none + sparse-checkout cone</td></tr>
+      <tr><td>Nur Historieanalyse</td><td>tree:0</td></tr>
+      <tr><td>Grosse Mediendateien getrennt</td><td>blob:limit=10m</td></tr>
+      <tr><td>Read-only Release-Deploy</td><td>blob:none + Tag auschecken</td></tr>
+    </table>
+    <h2>Sparse-Filter</h2>
+    <pre><code>blob_oid=$(git hash-object .sparse)
+    git clone --filter=sparse:oid=$blob_oid url</code></pre>
+    <h2>Kombinieren</h2>
+    <pre><code>git clone --filter=combine:blob%3Anone+tree%3A0 url</code></pre>
+    <h2>Verifikation</h2>
+    <pre><code>git config --get remote.origin.partialclonefilter
+    git rev-list --missing=print HEAD | wc -l
+    du -sh .git/objects</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p><code>tree:0</code> fur aktive Entwicklung verwenden.</p>
+
+- source_title: "Scalar: batteries-included large repo management"
+  title: "Scalar: Batterien-inklusive Grossrepo-Management"
+  langcode: de
+  body: |
+    <h2>Was Scalar ist</h2>
+    <p>Scalar (ursprunglich ein Microsoft-Tool, mit Git ab 2.38+ gebundelt) ist ein Wrapper, der den vollstandigen Performance-Stack — partial clone, sparse checkout, sparse index, fsmonitor, commit-graph, MIDX, geometrisches Repack, Background Maintenance — mit einem Befehl anwendet.</p>
+    <h2>Klonen</h2>
+    <pre><code>scalar clone https://example.com/big.git
+    cd big/src
+    scalar list</code></pre>
+    <h2>Was Scalar konfiguriert</h2>
+    <ul>
+      <li><code>--filter=blob:none</code> partial clone.</li>
+      <li><code>--sparse</code> mit Cone-Modus und Sparse Index.</li>
+      <li><code>core.fsmonitor=true</code>.</li>
+      <li><code>core.untrackedCache=true</code>.</li>
+      <li>Commit-Graph mit changed-path Bloom-Filtern.</li>
+      <li>Multi-pack-index mit Bitmaps.</li>
+      <li><code>git maintenance start</code>.</li>
+      <li><code>feature.manyFiles=true</code>.</li>
+    </ul>
+    <h2>Existierendes Repo registrieren</h2>
+    <pre><code>cd existing-big-repo
+    scalar register
+    scalar list
+    scalar unregister</code></pre>
+    <h2>Diagnose</h2>
+    <pre><code>scalar diagnose
+    scalar reconfigure</code></pre>
+    <h2>Wann verwenden</h2>
+    <ul>
+      <li>Repos mit Millionen von Dateien.</li>
+      <li>Repos mit Hunderten GB Historie.</li>
+      <li>CI-Runner, die wiederholt grosse Repos klonen.</li>
+    </ul>
+    <h2>Wann nicht</h2>
+    <p>Kleine Repos, bei denen der Optimierungsstack ubertrieben ist.</p>
+    <h2>Haufige Fehler</h2>
+    <p>Scalar als Magie behandeln — wenn etwas bricht, mussen Sie immer noch die zugrunde liegenden Funktionen verstehen.</p>
+
+- source_title: "Fsmonitor: faster working tree queries"
+  title: "Fsmonitor: schnellere Working-Tree-Abfragen"
+  langcode: de
+  body: |
+    <h2>Das Status-Walk-Problem</h2>
+    <p><code>git status</code> vergleicht den Working Tree mit dem Index und durchquert die stat-Info jeder verfolgten Datei. Auf einem Repo mit einer Million Dateien kann das Sekunden dauern. Fsmonitor verwendet die Datei-Anderungs-Benachrichtigungen des Betriebssystems.</p>
+    <h2>Eingebauter Daemon (Git 2.36+)</h2>
+    <pre><code>git config core.fsmonitor true
+    git fsmonitor--daemon start
+    git fsmonitor--daemon status
+    git fsmonitor--daemon stop</code></pre>
+    <h2>Externe Integrationen</h2>
+    <pre><code>git config core.fsmonitor /path/to/hook
+    git config core.fsmonitorHookVersion 2</code></pre>
+    <h2>Verifikation</h2>
+    <pre><code>GIT_TRACE2_PERF=1 git status 2&gt;&amp;1 | grep fsmonitor
+    git fsmonitor--daemon status
+    git update-index --fsmonitor</code></pre>
+    <h2>Untracked Cache</h2>
+    <pre><code>git config core.untrackedCache true</code></pre>
+    <h2>Performance-Zahlen</h2>
+    <p>Auf einem 4-Millionen-Datei-Monorepo sinkt <code>git status</code> von 5+ Sekunden auf unter 200ms.</p>
+    <h2>Haufige Fehler</h2>
+    <p>Fsmonitor ohne Untracked Cache aktivieren — nur halber Gewinn.</p>
+    <h2>Vorbehalte pro Plattform</h2>
+    <ul>
+      <li>macOS: FSEvents ist zuverlassig.</li>
+      <li>Windows: ReadDirectoryChangesW.</li>
+      <li>Linux: inotify-Limits (<code>fs.inotify.max_user_watches</code>).</li>
+    </ul>
+    <pre><code>sudo sysctl fs.inotify.max_user_watches=524288</code></pre>
+
+- source_title: "Fsmonitor daemon mode (Git 2.36+)"
+  title: "Fsmonitor-Daemon-Modus (Git 2.36+)"
+  langcode: de
+  body: |
+    <h2>Der eingebaute Daemon</h2>
+    <p>Git 2.36 fuhrte einen eingebauten fsmonitor-Daemon ein, der die Notwendigkeit externer Dienste wie Watchman eliminiert.</p>
+    <h2>Lebenszyklus</h2>
+    <pre><code>git config core.fsmonitor true
+    git status
+    git fsmonitor--daemon status
+    git fsmonitor--daemon stop
+    git fsmonitor--daemon run</code></pre>
+    <h2>Wie er sich integriert</h2>
+    <p>Wenn <code>core.fsmonitor=true</code>, fragt Git den Daemon nach geanderten Pfaden.</p>
+    <h2>Speedup verifizieren</h2>
+    <pre><code>time git -c core.fsmonitor=false status
+    time git -c core.fsmonitor=true status
+    GIT_TRACE2_PERF=1 git status 2&gt;&amp;1 | grep fsmonitor</code></pre>
+    <h2>Ressourcennutzung</h2>
+    <pre><code>sudo sysctl fs.inotify.max_user_watches=524288
+    sudo sysctl fs.inotify.max_user_instances=8192</code></pre>
+    <h2>Mehrere Worktrees</h2>
+    <p>Jeder Worktree erhalt seinen eigenen Daemon.</p>
+    <h2>Logging</h2>
+    <p>Logs landen in <code>.git/fsmonitor--daemon.log</code>, wenn im Debug gestartet.</p>
+    <h2>Haufige Fehler</h2>
+    <p>Auf Netzwerk-Dateisystemen ausfuhren, wo Anderungs-Events unzuverlassig sind (NFS, SMB).</p>
+    <h2>Watchman vs eingebaut</h2>
+    <p>Der eingebaute Daemon ist die empfohlene Standardeinstellung.</p>
+
+- source_title: "Configuring index.version for performance"
+  title: "index.version fur Performance konfigurieren"
+  langcode: de
+  body: |
+    <h2>Index-Versionen</h2>
+    <p>Git's Index hatte mehrere Formate. Version 2 ist die historische Baseline. Version 3 fugte skip-worktree hinzu. Version 4 (empfohlen fur grosse Repos) fugt Prafix-Kompression der Pfade hinzu.</p>
+    <h2>Einstellung</h2>
+    <pre><code>git config index.version 4
+    git update-index --index-version 4</code></pre>
+    <h2>Warum Version 4 hilft</h2>
+    <p>Fur Monorepos mit tiefen Pfaden dominieren wiederholte Pfad-Prafixe die Index-Grosse. V4 reduziert den Index um 30-60% auf realen Monorepos.</p>
+    <h2>Inspektion</h2>
+    <pre><code>git ls-files --debug | head
+    ls -la .git/index
+    GIT_TRACE2_PERF=1 git status 2&gt;&amp;1 | grep "do_read_index"</code></pre>
+    <h2>Mit feature.manyFiles paaren</h2>
+    <pre><code>git config feature.manyFiles true</code></pre>
+    <h2>Wann nicht</h2>
+    <p>Fur kleine Repos (unter 10k Dateien) ist v2 in Ordnung.</p>
+    <h2>Haufige Fehler</h2>
+    <p><code>index.version</code> in der Konfiguration setzen, aber <code>git update-index --index-version</code> nicht ausfuhren.</p>
+    <h2>Hinweis: skip-worktree und assume-unchanged</h2>
+    <p>Diese Bits leben im Index. V3+ unterstutzt sie; V2 hat begrenzte Unterstutzung.</p>
+
+- source_title: "Feature.manyFiles configuration"
+  title: "Feature.manyFiles-Konfiguration"
+  langcode: de
+  body: |
+    <h2>Die Bundle-Einstellung</h2>
+    <p>Tuning von Monorepos beinhaltet ein Dutzend Einstellungen. Statt jede einzelne zu memorieren und anzuwenden, bietet Git "Feature-Flags", die ein koharentes Bundle aktivieren.</p>
+    <h2>Was es einstellt</h2>
+    <ul>
+      <li><code>index.version=4</code>.</li>
+      <li><code>core.untrackedCache=true</code>.</li>
+    </ul>
+    <pre><code>git config feature.manyFiles true
+    git config --list | grep -E '^(index|core)\.'</code></pre>
+    <h2>Schwester-Features</h2>
+    <ul>
+      <li><code>feature.experimental=true</code>.</li>
+      <li><code>feature.manyCommits</code>.</li>
+    </ul>
+    <h2>Mit Monorepo-Stack kombinieren</h2>
+    <pre><code>git config feature.manyFiles true
+    git config core.fsmonitor true
+    git config core.commitGraph true
+    git sparse-checkout init --cone --sparse-index
+    git maintenance start</code></pre>
+    <h2>Verhalten zwischen Versionen</h2>
+    <p>Der genaue Satz von Einstellungen, den <code>feature.manyFiles</code> aktiviert, kann zwischen Git-Versionen variieren.</p>
+    <h2>Auswirkung verifizieren</h2>
+    <pre><code>time git -c feature.manyFiles=false status
+    time git -c feature.manyFiles=true status
+    GIT_TRACE2_PERF=1 git status 2&gt;&amp;1 | head -50</code></pre>
+    <h2>Haufige Fehler</h2>
+    <pre><code>git update-index --index-version 4
+    git status</code></pre>
+    <h2>Reset</h2>
+    <pre><code>git config --unset feature.manyFiles
+    git update-index --index-version 2</code></pre>
+
+- source_title: "Feature.experimental and feature.manyCommits"
+  title: "Feature.experimental und feature.manyCommits"
+  langcode: de
+  body: |
+    <h2>Opt-in-Experimente</h2>
+    <p>Das Git-Projekt testet neue Performance-Features hinter <code>feature.experimental</code>.</p>
+    <h2>Was es derzeit setzt</h2>
+    <ul>
+      <li><code>protocol.version=2</code>.</li>
+      <li><code>fetch.negotiationAlgorithm=skipping</code>.</li>
+      <li><code>pack.useSparse=true</code>.</li>
+      <li><code>core.commitGraph=true</code>.</li>
+      <li><code>core.multiPackIndex=true</code>.</li>
+    </ul>
+    <pre><code>git config feature.experimental true
+    git config --list --show-origin | grep -i 'feature\|protocol\|pack\|commitgraph'</code></pre>
+    <h2>feature.manyCommits</h2>
+    <pre><code>git --version
+    git help config | grep -A3 manyCommits</code></pre>
+    <h2>Risikoprofil</h2>
+    <p>"Experimentell" bedeutet, dass die Git-Entwickler es fur breite Tests bereit halten, sich aber das Recht vorbehalten, das Verhalten zu andern.</p>
+    <h2>Anderungen verfolgen</h2>
+    <p>Lesen Sie das <code>RelNotes/</code>-Verzeichnis der Git-Quellen fur jeden Release.</p>
+    <h2>Praktischer Rat</h2>
+    <ul>
+      <li>Fur Monorepo-Arbeit bevorzugen Sie <code>feature.manyFiles</code> gegenuber <code>feature.experimental</code>.</li>
+      <li>Verwenden Sie <code>feature.experimental</code> auf einer personlichen Maschine oder Staging.</li>
+    </ul>
+    <h2>Haufige Fehler</h2>
+    <p>Experimentelle Features in CI aktivieren und dann Git aktualisieren.</p>
+
+- source_title: "pack.windowMemory and pack.threads tuning"
+  title: "Tuning von pack.windowMemory und pack.threads"
+  langcode: de
+  body: |
+    <h2>Repack-Budgets</h2>
+    <p>Wenn Git Deltas wahrend des Repacks berechnet, betrachtet es ein Fenster von Kandidaten-Basisobjekten pro Ziel. Grossere Fenster produzieren kleinere Packs, verwenden aber mehr Speicher und CPU.</p>
+    <h2>Schlussel-Stellschrauben</h2>
+    <pre><code>[pack]
+    windowMemory = 256m
+    threads = 0
+    deltaCacheSize = 256m
+    deltaCacheLimit = 1000
+    window = 10
+    depth = 50
+    sizeLimit = 2g
+    bigFileThreshold = 512m</code></pre>
+    <h2>Repacking mit benutzerdefinierten Budgets</h2>
+    <pre><code>git repack -adf --window=250 --depth=50 \
+      --window-memory=512m --threads=8 \
+      --write-midx --write-bitmap-index</code></pre>
+    <h2>Speicher-Mathematik</h2>
+    <pre><code>git -c pack.threads=2 -c pack.windowMemory=128m repack -adf</code></pre>
+    <h2>Server-Tuning</h2>
+    <pre><code>[uploadpack]
+    packObjectsHook = /usr/local/bin/pack-objects-wrapper
+    [pack]
+    threads = 4
+    windowMemory = 128m</code></pre>
+    <h2>Grosse Datei-Schwelle</h2>
+    <pre><code>git config core.bigFileThreshold 50m</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p><code>--window=2000</code> in der Hoffnung auf engere Packs ohne Speicher-Test setzen — OOM folgt.</p>
+    <h2>Effekt messen</h2>
+    <pre><code>du -sh .git/objects/pack/
+    git verify-pack -v .git/objects/pack/pack-*.idx | tail -3
+    GIT_TRACE2_PERF=1 git repack -adf 2&gt;&amp;1 | tail -20</code></pre>
+
+- source_title: "core.preloadIndex and parallel checkout (Git 2.32+)"
+  title: "core.preloadIndex und paralleler Checkout (Git 2.32+)"
+  langcode: de
+  body: |
+    <h2>Zwei Parallelitats-Gewinne</h2>
+    <p>Zwei Einstellungen schalten signifikante Speedups fur Alltagsoperationen frei. <code>core.preloadIndex</code> parallelisiert die lstat-Aufrufe, die <code>git status</code> macht; paralleler Checkout (Git 2.32+) parallelisiert die Datei-Schreibvorgange wahrend <code>git checkout</code>, <code>git switch</code> und <code>git restore</code>.</p>
+    <h2>Preload Index</h2>
+    <pre><code>git config core.preloadIndex true</code></pre>
+    <h2>Paralleler Checkout</h2>
+    <pre><code>git config checkout.workers 0
+    git config checkout.thresholdForParallelism 100</code></pre>
+    <h2>Wann paralleler Checkout am meisten hilft</h2>
+    <ul>
+      <li>Branches mit Tausenden von Dateiunterschieden wechseln.</li>
+      <li>Initialer Checkout nach Klon.</li>
+      <li>Grosse Pfadmengen via <code>git restore</code> wiederherstellen.</li>
+      <li>Dateisysteme mit langsamem Per-File-Open.</li>
+    </ul>
+    <h2>Messung</h2>
+    <pre><code>time git -c checkout.workers=1 checkout main
+    time git -c checkout.workers=0 checkout main
+    GIT_TRACE2_PERF=1 git checkout big-branch 2&gt;&amp;1 | grep -i checkout</code></pre>
+    <h2>Vorbehalte</h2>
+    <p>Paralleler Checkout interagiert mit Smudge-Filtern: Filter laufen sequenziell pro Datei, aber mehrere Dateien laufen parallel.</p>
+    <h2>Dateisystem-Warnungen</h2>
+    <p>Auf Windows kann Antivirus-Software Datei-Erstellungen serialisieren.</p>
+    <h2>Haufige Fehler</h2>
+    <p>preloadIndex auf langsamen Disks deaktivieren — falsch herum: Parallelitat verbirgt Latenz.</p>
+
+- source_title: "Shallow clones in CI/CD: balancing speed and correctness"
+  title: "Shallow Clones in CI/CD: Geschwindigkeit und Korrektheit balancieren"
+  langcode: de
+  body: |
+    <h2>Der Shallow-Trade-off</h2>
+    <p>Ein Shallow Clone (<code>--depth=N</code>) ladt nur die letzten N Commits herunter. Schneller, kleiner, aber mit Vorbehalten: viele historie-abhangige Operationen werden unmoglich oder falsch.</p>
+    <h2>Grundlegender Aufruf</h2>
+    <pre><code>git clone --depth=1 https://example.com/repo.git
+    git clone --depth=50 --no-tags https://example.com/repo.git
+    git clone --shallow-since=2024-01-01 https://example.com/repo.git
+    git clone --shallow-exclude=v1.0.0 https://example.com/repo.git</code></pre>
+    <h2>Single-Branch</h2>
+    <pre><code>git clone --depth=1 --no-single-branch https://example.com/repo.git</code></pre>
+    <h2>Was bricht</h2>
+    <ul>
+      <li><code>git log</code> stoppt an der Shallow-Grenze.</li>
+      <li><code>git blame</code> ordnet tiefere Anderungen dem Grenz-Commit zu.</li>
+      <li><code>git bisect</code> kann nur innerhalb des Shallow-Fensters suchen.</li>
+      <li><code>git merge-base</code> kann fehlschlagen.</li>
+    </ul>
+    <h2>Spater erweitern</h2>
+    <pre><code>git fetch --unshallow
+    git fetch --depth=1000
+    git fetch --shallow-since=2023-01-01</code></pre>
+    <h2>CI-Muster</h2>
+    <pre><code>git clone --depth=1 --no-tags --filter=tree:0 \
+      --branch "$CI_COMMIT_REF_NAME" "$CI_REPOSITORY_URL" .</code></pre>
+    <h2>Wann Shallow vermeiden</h2>
+    <ul>
+      <li>Release-Builds, die git describe einbetten.</li>
+      <li>SBOM/Lizenz-Scanner, die uber die Authorship laufen.</li>
+      <li>Bisect- oder Blame-Schritte in CI.</li>
+    </ul>
+    <h2>Haufige Fehler</h2>
+    <p><code>--depth=1</code> in einer Release-Pipeline verwenden, die <code>git describe</code> ausfuhrt, und v0.0.0-unknown drucken.</p>
+
+- source_title: "Protocol v2 for efficient fetch negotiation"
+  title: "Protocol v2 fur effiziente Fetch-Verhandlung"
+  langcode: de
+  body: |
+    <h2>Warum v2</h2>
+    <p>Protokoll v0/v1 sandte die vollstandige Ref-Werbung des Servers zu Beginn jedes Fetches — eine Nutzlast proportional zur Anzahl der Refs. Auf Repos mit Zehntausenden von Refs dominierte dies die Transferzeit. Protokoll v2 (Standard ab Git 2.26+) erlaubt dem Client, spezifische Refs nach Namen anzufordern.</p>
+    <h2>Verifizieren, dass es aktiv ist</h2>
+    <pre><code>GIT_TRACE_PACKET=1 git ls-remote origin 2&gt;&amp;1 | head -10
+    git config protocol.version 2
+    git config --global protocol.version 2</code></pre>
+    <h2>Server-Anforderungen</h2>
+    <ul>
+      <li>HTTP: Git 2.18+ auf dem Server.</li>
+      <li>SSH: Git 2.18+ auf beiden Enden.</li>
+    </ul>
+    <h2>Capabilities</h2>
+    <pre><code>GIT_TRACE_PACKET=1 git fetch 2&gt;&amp;1 | grep -i 'capabilit\|fetch='</code></pre>
+    <h2>Praktische Auswirkung</h2>
+    <p>Auf Linux's Repo (~50k Refs) verbrachte ein frischer Fetch uber v0 4-8 Sekunden in der Werbung; v2 reduziert dies auf unter eine Sekunde.</p>
+    <h2>Sideband und Fortschritt</h2>
+    <pre><code>git fetch --quiet
+    git -c progress.delay=999 fetch</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Protocol Version 0 in alten Konfigurationsdateien erzwingen.</p>
+    <h2>Mit kombinieren</h2>
+    <ul>
+      <li>Verhandlungsalgorithmus: <code>fetch.negotiationAlgorithm=skipping</code>.</li>
+      <li>Erreichbarkeits-Bitmaps auf dem Server.</li>
+      <li>Ref-Filter: <code>fetch.refSpecs</code>.</li>
+    </ul>
+
+- source_title: "Wire protocol optimization: stateless-connect"
+  title: "Wire-Protokoll-Optimierung: stateless-connect"
+  langcode: de
+  body: |
+    <h2>Die Transportschicht</h2>
+    <p>Git's Wire-Protokoll verschachtelt historisch Client- und Server-Nachrichten uber eine zustandsbehaftete Verbindung. <code>stateless-connect</code> (eingefuhrt fur Protokoll v2 uber HTTP) entkoppelt Anfragen, sodass jede unabhangig routbar ist.</p>
+    <h2>Stateless-Flows</h2>
+    <pre><code>GIT_TRACE_PACKET=1 GIT_TRACE_CURL=1 \
+      git -c protocol.version=2 fetch origin 2&gt;&amp;1 | head -50</code></pre>
+    <h2>HTTP/2-Vorteile</h2>
+    <p>HTTP/2-Multiplexing erlaubt mehreren Stateless-Anfragen, eine Verbindung zu teilen.</p>
+    <h2>Tuning der HTTP-Schicht</h2>
+    <pre><code>[http]
+    version = HTTP/2
+    postBuffer = 524288000
+    lowSpeedLimit = 1000
+    lowSpeedTime = 30
+    minSessions = 4
+    maxRequestBuffer = 100M</code></pre>
+    <h2>Fetch-Parallelitat</h2>
+    <pre><code>git config fetch.parallel 0
+    git config submodule.fetchJobs 0</code></pre>
+    <h2>Smart vs Dumb HTTP</h2>
+    <p>"Smart" HTTP unterstutzt Verhandlung (der moderne Pfad); "Dumb" HTTP serviert nur <code>.git/objects</code> als statische Dateien.</p>
+    <h2>Haufige Fehler</h2>
+    <p>HTTP/1.1 mit <code>http.version=HTTP/1.1</code> auf einem Host erzwingen, der HTTP/2 unterstutzt.</p>
+    <h2>Diagnose</h2>
+    <pre><code>GIT_CURL_VERBOSE=1 git fetch 2&gt;&amp;1 | head -30
+    GIT_TRACE_PACKET=1 git fetch 2&gt;&amp;1 | grep -i version</code></pre>
+
+- source_title: "Delta islands for pack efficiency"
+  title: "Delta-Inseln fur Pack-Effizienz"
+  langcode: de
+  body: |
+    <h2>Das Cross-Fork-Problem</h2>
+    <p>Forge-Server (GitHub, GitLab) hosten viele Forks eines Repos zusammen. Naiv komprimiert ein einzelnes Packfile Deltas uber alle Forks — effizient auf Disk, aber ineffizient beim Servieren eines einzelnen Forks. Delta-Inseln beschranken Delta-Ketten so, dass die Ketten jedes Forks innerhalb seines eigenen Objekt-Sets bleiben.</p>
+    <h2>Inseln konfigurieren</h2>
+    <pre><code>[pack]
+    island = refs/heads/main
+    island = refs/heads/release/*
+    island = refs/tags/*</code></pre>
+    <h2>Repacking mit Inseln</h2>
+    <pre><code>git repack -adf --window=250 --depth=50</code></pre>
+    <h2>Anwendungsfalle</h2>
+    <ul>
+      <li>Selbstgehostetes Gitea/GitLab/Forgejo mit vielen Forks.</li>
+      <li>Interne Mirror, die mehrere interne Repos servieren.</li>
+      <li>Backups, die Per-Repo-Snapshots schnell extrahieren mussen.</li>
+    </ul>
+    <h2>Nur-Server-Feature</h2>
+    <p>Delta-Inseln zahlen auf dem Server.</p>
+    <h2>Verifikation</h2>
+    <pre><code>git verify-pack -v .git/objects/pack/pack-*.idx | head
+    GIT_TRACE2_PERF=1 git pack-objects --stdout --revs &lt; refs.txt &gt; out.pack</code></pre>
+    <h2>Haufige Fehler</h2>
+    <p>Inseln zu grob setzen (alles in einer Insel) — kein Nutzen.</p>
+    <h2>Pseudo-Merge-Bitmaps</h2>
+    <p>Modernes Git paart Delta-Inseln mit Pseudo-Merge-Bitmaps.</p>
+
+- source_title: "Ahead-of-time packfile building with git fast-export"
+  title: "Vorab-Packfile-Erstellung mit git fast-export"
+  langcode: de
+  body: |
+    <h2>fast-export und fast-import</h2>
+    <p><code>git fast-export</code> serialisiert ein Repository in einen Strom von Befehlen; <code>git fast-import</code> rekonstruiert ein Repository aus einem. Zusammen bilden sie das Datenaustausch-Protokoll von Git.</p>
+    <h2>Exportieren</h2>
+    <pre><code>git fast-export --all &gt; all.fi
+    git fast-export --all --signed-tags=strip --tag-of-filtered-object=drop &gt; clean.fi
+    git fast-export --reference-excluded-parents main..feature &gt; topic.fi</code></pre>
+    <h2>Importieren</h2>
+    <pre><code>mkdir new-repo &amp;&amp; cd new-repo &amp;&amp; git init
+    cat ../all.fi | git fast-import
+    git checkout main</code></pre>
+    <h2>Anwendungsfall: dehydriertes Archiv</h2>
+    <pre><code>git rev-list --objects --all | \
+      git pack-objects --stdout --revs --delta-base-offset \
+      &gt; offline.pack</code></pre>
+    <h2>Deterministische Builds</h2>
+    <pre><code>git fast-export --all --no-data &gt; metadata-only.fi</code></pre>
+    <h2>Anonymisieren</h2>
+    <pre><code>git fast-export --all --anonymize &gt; anon.fi</code></pre>
+    <h2>Chirurgie via filter-repo</h2>
+    <p><code>git filter-repo</code> verwendet fast-export intern.</p>
+    <h2>Haufige Fehler</h2>
+    <p>fast-export-Strome als portable Archive behandeln — sie sind zeilenorientiert und an die Git-Format-Version gebunden.</p>
+    <h2>Performance</h2>
+    <pre><code>git fast-export --all | (cd /tmp/new &amp;&amp; git init &amp;&amp; git fast-import)</code></pre>
+
+- source_title: "Repository size analysis: git count-objects and git sizer"
+  title: "Repository-Grossenanalyse: git count-objects und git sizer"
+  langcode: de
+  body: |
+    <h2>Sein Gewicht kennen</h2>
+    <p>Vor der Optimierung messen. Git liefert <code>git count-objects</code> fur Basisstatistiken; das Drittanbieter-<code>git-sizer</code> von GitHub liefert eine tiefere Analyse.</p>
+    <h2>git count-objects</h2>
+    <pre><code>git count-objects -v
+    git count-objects -vH
+    git count-objects --human-readable</code></pre>
+    <h2>git-sizer</h2>
+    <pre><code>git-sizer
+    git-sizer --verbose
+    git-sizer --no-progress --threshold 1</code></pre>
+    <h2>Beispieleinblicke</h2>
+    <ul>
+      <li>Maximale Anzahl Dateien in einem Tree: warnt uber 100k.</li>
+      <li>Maximale Blob-Grosse: warnt uber 50MB.</li>
+      <li>Gesamtgrosse aller Commits.</li>
+      <li>Maximale Tag-Tiefe.</li>
+      <li>Gesamt erreichbare Objekte.</li>
+    </ul>
+    <h2>Grosse Dateien finden</h2>
+    <pre><code>git rev-list --objects --all | \
+      git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize:disk) %(rest)' | \
+      awk '$1=="blob" {print $3, $4}' | sort -rn | head</code></pre>
+    <h2>Aktionen pro Befund</h2>
+    <ul>
+      <li>Grosse Blobs: zu Git LFS migrieren oder Historie mit <code>filter-repo</code> umschreiben.</li>
+      <li>Viele kleine Dateien: <code>feature.manyFiles</code>, sparse checkout aktivieren.</li>
+      <li>Viele Refs: protocol v2 aktivieren; reftable erwagen.</li>
+      <li>Langsame Walks: commit-graph mit Bloom-Filtern schreiben.</li>
+      <li>Langsame Lookups: MIDX mit Bitmaps aktivieren.</li>
+    </ul>
+    <h2>Haufige Fehler</h2>
+    <p>Nur die Grosse von <code>.git</code> auf der Disk anschauen — gepackte Objekte teilen Bytes via Deltas.</p>
+    <h2>Wachstum verfolgen</h2>
+    <pre><code>git-sizer --json &gt; sizer-$(date +%Y%m%d).json
+    diff &lt;(jq . sizer-old.json) &lt;(jq . sizer-new.json)</code></pre>
+
+- source_title: "Configuration playbook for large repositories"
+  title: "Konfigurations-Playbook fur grosse Repositories"
+  langcode: de
+  body: |
+    <h2>Die Alles-in-einem-Konfiguration</h2>
+    <p>Die Stucke zusammensetzen: Dies ist eine einzige Konfiguration, die den modernen Git-Performance-Stack anwendet.</p>
+    <h2>Der Konfig-Block</h2>
+    <pre><code>[feature]
+    manyFiles = true
+    [core]
+    fsmonitor = true
+    untrackedCache = true
+    commitGraph = true
+    multiPackIndex = true
+    preloadIndex = true
+    [index]
+    version = 4
+    sparse = true
+    [fetch]
+    parallel = 0
+    writeCommitGraph = true
+    negotiationAlgorithm = skipping
+    showForcedUpdates = false
+    [gc]
+    auto = 0
+    writeCommitGraph = true
+    [maintenance]
+    auto = false
+    [checkout]
+    workers = 0
+    thresholdForParallelism = 100
+    [pack]
+    useSparse = true
+    writeBitmaps = true
+    threads = 0
+    windowMemory = 256m
+    [commitGraph]
+    changedPathsVersion = 2
+    [diff]
+    algorithm = histogram
+    [merge]
+    conflictStyle = zdiff3
+    [rebase]
+    autoSquash = true
+    autoStash = true
+    updateRefs = true
+    [push]
+    autoSetupRemote = true
+    [protocol]
+    version = 2</code></pre>
+    <h2>Einmalige Tasks</h2>
+    <pre><code>git sparse-checkout init --cone --sparse-index
+    git sparse-checkout set apps/web libs/shared
+
+    git commit-graph write --reachable --changed-paths
+    git multi-pack-index write --bitmap
+    git update-index --index-version 4
+    git pack-refs --all
+
+    git maintenance start</code></pre>
+    <h2>Verifikation</h2>
+    <pre><code>git config --list --show-origin | sort
+    git maintenance status
+    git fsmonitor--daemon status
+    git-sizer --no-progress
+    GIT_TRACE2_PERF=1 git status</code></pre>
+    <h2>Hinweise pro Plattform</h2>
+    <ul>
+      <li>Linux: <code>fs.inotify.max_user_watches</code> erhohen.</li>
+      <li>macOS: nichts Extra.</li>
+      <li>Windows: Working Tree von AV-Echtzeit-Scanning ausschliessen.</li>
+    </ul>
+    <h2>Haufige Fehler</h2>
+    <p>Jede Einstellung auf einmal anwenden, ohne zu messen.</p>
+
+- source_title: "Recovery and repair of corrupt repositories"
+  title: "Wiederherstellung und Reparatur korrupter Repositories"
+  langcode: de
+  body: |
+    <h2>Korruption diagnostizieren</h2>
+    <p>Repositories werden durch Stromausfall, Festplattenversagen, partielle Netzwerk-Sync oder buggy Nicht-Git-Tools, die <code>.git</code> beruhren, beschadigt.</p>
+    <pre><code>git fsck --full
+    git fsck --full --strict --no-dangling
+    git fsck --connectivity-only
+    git fsck --lost-found</code></pre>
+    <h2>Haufige Fehler und Fixes</h2>
+    <h3>Loose-Objekt korrupt</h3>
+    <pre><code># on healthy clone:
+    git cat-file -p &lt;sha&gt; &gt; /tmp/recovered
+    # on corrupt clone:
+    cd .git/objects/&lt;xx&gt;
+    mv &lt;rest-of-sha&gt; &lt;rest-of-sha&gt;.bad
+    git hash-object -w /tmp/recovered</code></pre>
+    <h3>Pack-Datei korrupt</h3>
+    <pre><code>for p in .git/objects/pack/pack-*.pack; do
+      git verify-pack -v "$p" &gt;/dev/null 2&gt;&amp;1 || echo "BAD: $p"
+    done</code></pre>
+    <pre><code>rm .git/objects/pack/pack-&lt;sha&gt;.{pack,idx,bitmap,rev}
+    git fetch --all
+    git repack -ad</code></pre>
+    <h3>Index korrupt</h3>
+    <pre><code>rm .git/index
+    git reset</code></pre>
+    <h3>Refs korrupt</h3>
+    <pre><code>git pack-refs --all
+    cat .git/packed-refs
+    git update-ref refs/heads/main &lt;sha&gt;</code></pre>
+    <h2>Repository-weite Wiederherstellung von einem Klon</h2>
+    <pre><code>git clone https://example.com/repo.git fresh
+    cd corrupt
+    git push ../fresh 'refs/heads/local-only:refs/heads/local-only'</code></pre>
+    <h2>Pravention</h2>
+    <ul>
+      <li><code>git fsck</code> regelmassig ausfuhren.</li>
+      <li>Bare-Backups speichern.</li>
+      <li>Vermeiden, in <code>.git/</code> manuell zu bearbeiten.</li>
+      <li>ECC-RAM und zuverlassigen Speicher verwenden.</li>
+    </ul>
+    <h2>Haufige Fehler</h2>
+    <p><code>git gc</code> auf einem korrupten Repo ausfuhren — Pruning kann die einzigen Kopien wiederherstellbarer Objekte loschen.</p>
+    <h2>SHA-1-Kollisions-Schutz</h2>
+    <pre><code>git --version
+    echo "test" | git hash-object --stdin</code></pre>

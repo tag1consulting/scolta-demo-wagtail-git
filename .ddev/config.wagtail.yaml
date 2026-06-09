@@ -1,0 +1,9 @@
+web_extra_daemons:
+    - name: "wagtail"
+      command: "/var/www/html/.venv/bin/python manage.py runserver 0.0.0.0:8000"
+      directory: /var/www/html
+web_extra_exposed_ports:
+    - name: "wagtail"
+      container_port: 8000
+      http_port: 80
+      https_port: 443

@@ -1,0 +1,43 @@
+[project]
+name = "gitmastery-django-demo"
+version = "1.0.0"
+description = "GitMastery — Wagtail demo for Scolta AI Search (port of the Drupal git-manual demo)"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "Django>=4.2,<6.0",
+    "wagtail>=6.0",
+    "scolta",
+    "scolta-django",
+    "PyYAML>=6.0",
+    "gunicorn>=21.0",
+    "whitenoise>=6.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-django>=4.8",
+    "ruff>=0.5",
+]
+
+# For local development, resolve scolta + scolta-django from the sibling repos
+# in this checkout (the same packages the other adapters live in). In Docker the
+# requirements.txt pulls them from PyPI instead.
+[tool.uv.sources]
+scolta = { path = "../../packages/scolta-python", editable = true }
+scolta-django = { path = "../../packages/scolta-django", editable = true }
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings_test"
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]

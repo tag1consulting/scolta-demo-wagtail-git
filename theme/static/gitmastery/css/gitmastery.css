@@ -1,0 +1,158 @@
+/* GitMastery (Wagtail) — documentation theme.
+ * Visual port of the Drupal git-manual gitmastery_theme: Git orange accent,
+ * Inter + Fira Code, GitHub-dark code blocks. Self-contained (no Olivero base).
+ */
+
+:root {
+  --color-accent:       #f05032;
+  --color-accent-dark:  #c0392b;
+  --color-accent-muted: rgba(240, 80, 50, 0.1);
+
+  --color-header:       #18181b;
+
+  --color-bg:           #ffffff;
+  --color-bg-subtle:    #f8fafc;
+  --color-text:         #111827;
+  --color-text-muted:   #6b7280;
+  --color-border:       #e5e7eb;
+
+  --color-code-bg:      #0d1117;
+  --color-code-text:    #e6edf3;
+  --color-code-border:  #30363d;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Fira Code', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+
+  --sidebar-w: 17rem;
+  --header-h: 4rem;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+
+a, a:link { color: var(--color-accent); text-decoration: underline; text-decoration-color: rgba(240,80,50,.3); text-underline-offset: .2em; }
+a:hover { color: var(--color-accent-dark); }
+
+.skip-link { position: absolute; left: -999px; }
+.skip-link:focus { left: 1rem; top: 1rem; background: #fff; padding: .5rem 1rem; z-index: 100; }
+
+/* ---------------- Header ---------------- */
+.site-header {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--color-header);
+  color: #fff;
+  height: var(--header-h);
+  display: flex; align-items: center;
+}
+.site-header__inner {
+  width: 100%; max-width: 90rem; margin: 0 auto;
+  display: flex; align-items: center; gap: 1.5rem;
+  padding: 0 1.25rem;
+}
+.site-brand { display: flex; align-items: center; gap: .5rem; color: #fff; text-decoration: none; font-weight: 700; font-size: 1.15rem; }
+.site-brand__mark { color: var(--color-accent); font-size: 1.4rem; }
+.site-brand__name { letter-spacing: -.01em; }
+
+/* Search lives in the home-page main content (not the header), matching the
+   Drupal demo: full content width, filters left + results right are handled by
+   scolta.css from the package; the theme only sets container spacing. */
+.home-search { margin: 1.5rem 0 2rem; }
+
+/* ---------------- Language switcher ---------------- */
+.language-switcher { position: relative; margin-left: auto; }
+.language-switcher__list { list-style: none; margin: 0; padding: 0; display: flex; gap: .25rem; }
+.language-switcher__list li a {
+  display: inline-block; padding: .3rem .55rem; border-radius: .35rem;
+  color: #d4d4d8; text-decoration: none; font-size: .8rem; font-weight: 600;
+}
+.language-switcher__list li.is-active a { background: var(--color-accent); color: #fff; }
+.language-switcher__list li a:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+/* Collapsed (mobile) trigger created by lang-switcher.js */
+.lang-trigger {
+  display: none; background: rgba(255,255,255,.12); color: #fff; border: 0;
+  border-radius: .35rem; padding: .3rem .6rem; font-weight: 600; cursor: pointer;
+}
+
+/* ---------------- Layout ---------------- */
+.layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; max-width: 90rem; margin: 0 auto; }
+
+.sidebar {
+  border-right: 1px solid var(--color-border);
+  padding: 1.5rem 1rem; height: calc(100vh - var(--header-h));
+  position: sticky; top: var(--header-h); overflow-y: auto;
+  background: var(--color-bg-subtle);
+}
+.nav-section { margin-bottom: .35rem; }
+.nav-section > summary {
+  cursor: pointer; font-weight: 600; padding: .35rem .25rem; list-style: none;
+  color: var(--color-text);
+}
+.nav-section > summary::-webkit-details-marker { display: none; }
+.nav-section ul { list-style: none; margin: .15rem 0 .5rem; padding: 0 0 0 .5rem; }
+.nav-section li a { display: block; padding: .25rem .4rem; border-radius: .3rem; font-size: .9rem; color: var(--color-text-muted); text-decoration: none; }
+.nav-section li a:hover { background: var(--color-accent-muted); color: var(--color-text); }
+.nav-section li.is-active a { background: var(--color-accent); color: #fff; }
+
+.content { padding: 2rem 2.5rem 4rem; min-width: 0; }
+
+/* ---------------- Prose ---------------- */
+.prose { max-width: 52rem; }
+.prose h1 { font-size: 2rem; line-height: 1.2; letter-spacing: -.02em; margin: 0 0 .75rem; }
+.prose h2 { font-size: 1.4rem; margin: 2rem 0 .75rem; padding-bottom: .3rem; border-bottom: 1px solid var(--color-border); }
+.prose h3 { font-size: 1.15rem; margin: 1.5rem 0 .5rem; }
+.prose p, .prose li { font-size: 1rem; }
+.prose ul, .prose ol { padding-left: 1.4rem; }
+
+.prose code { font-family: var(--font-mono); font-size: .9em; background: var(--color-accent-muted); padding: .1rem .35rem; border-radius: .25rem; }
+.prose pre { background: var(--color-code-bg); color: var(--color-code-text); border: 1px solid var(--color-code-border); border-radius: .5rem; padding: 1rem 1.1rem; overflow-x: auto; }
+.prose pre code { background: none; padding: 0; color: inherit; }
+
+.prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.prose th, .prose td { border: 1px solid var(--color-border); padding: .5rem .65rem; text-align: left; }
+.prose th { background: var(--color-bg-subtle); }
+
+/* ---------------- Meta badges ---------------- */
+.doc-meta { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.25rem; }
+.badge { font-size: .72rem; font-weight: 600; padding: .2rem .55rem; border-radius: 999px; background: var(--color-bg-subtle); border: 1px solid var(--color-border); color: var(--color-text-muted); }
+.badge--section { color: var(--color-accent-dark); border-color: rgba(240,80,50,.35); background: var(--color-accent-muted); }
+
+/* ---------------- Home ---------------- */
+.hero__hint { color: var(--color-text-muted); }
+.section-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+.section-card { border: 1px solid var(--color-border); border-radius: .6rem; padding: 1rem 1.1rem; background: var(--color-bg-subtle); }
+.section-card h2 { margin: 0 0 .25rem; font-size: 1.1rem; border: 0; }
+.section-card__count { margin: 0 0 .5rem; font-size: .8rem; color: var(--color-text-muted); }
+.section-card ul { list-style: none; margin: 0; padding: 0; }
+.section-card li a { font-size: .9rem; }
+
+/* ---------------- Comparison ---------------- */
+.verdict { border-left: 3px solid var(--color-accent); background: var(--color-accent-muted); padding: .75rem 1rem; border-radius: 0 .4rem .4rem 0; margin-top: 1.5rem; }
+.compared-systems { color: var(--color-text-muted); }
+
+/* ---------------- Footer ---------------- */
+.site-footer { border-top: 1px solid var(--color-border); padding: 2rem 1.25rem; text-align: center; color: var(--color-text-muted); font-size: .9rem; }
+
+/* ---------------- Scolta search widget polish ---------------- */
+.scolta-search { width: 100%; }
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 60rem) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--color-border); }
+  .content { padding: 1.5rem 1.25rem 3rem; }
+  .language-switcher__list { position: absolute; right: 0; top: 2.2rem; flex-direction: column; background: var(--color-header); padding: .35rem; border-radius: .4rem; display: none; }
+  .language-switcher.is-open .language-switcher__list { display: flex; }
+  .lang-trigger { display: inline-block; }
+}

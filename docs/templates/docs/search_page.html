@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n scolta %}
+
+{% block title %}{% trans "Search" %} — GitMastery{% endblock %}
+
+{% block content %}
+  <article class="prose">
+    <h1>{% trans "Search" %}</h1>
+  </article>
+
+  <div class="search-page">{% scolta_search %}</div>
+{% endblock %}

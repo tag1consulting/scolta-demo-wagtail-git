@@ -1,0 +1,8 @@
+{% load i18n %}
+<div class="doc-meta">
+  {% if page.section %}<span class="badge badge--section">{{ page.section }}</span>{% endif %}
+  {% if page.difficulty %}<span class="badge badge--difficulty">{{ page.difficulty }}</span>{% endif %}
+  {% if page.topic %}<span class="badge badge--topic">{{ page.topic }}</span>{% endif %}
+  {% if page.git_version %}<span class="badge badge--version">Git {{ page.git_version }}</span>{% endif %}
+  {% if page.estimated_time %}<span class="badge badge--time">⏱ {{ page.estimated_time }}</span>{% endif %}
+</div>
