@@ -5,8 +5,8 @@
 # the in-repo packages, install them editable instead (see README / pyproject).
 Django>=4.2,<6.0
 wagtail>=6.0
-scolta
-scolta-django
+scolta==1.0.1
+scolta-django==1.0.1
 PyYAML>=6.0
 gunicorn>=21.0
 whitenoise>=6.6

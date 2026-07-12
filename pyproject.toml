@@ -21,13 +21,6 @@ dev = [
     "ruff>=0.5",
 ]
 
-# For local development, resolve scolta + scolta-django from the sibling repos
-# in this checkout (the same packages the other adapters live in). In Docker the
-# requirements.txt pulls them from PyPI instead.
-[tool.uv.sources]
-scolta = { path = "../../packages/scolta-python", editable = true }
-scolta-django = { path = "../../packages/scolta-django", editable = true }
-
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.settings_test"
 testpaths = ["tests"]
